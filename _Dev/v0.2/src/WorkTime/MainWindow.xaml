@@ -3,9 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:WorkTime.ViewModels"
         xmlns:ctrl="clr-namespace:WorkTime.Controls"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="WorkTime"
         Width="640" Height="720"
-        MinWidth="380" MinHeight="280"
+        MinWidth="320" MinHeight="170"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="CanResize"
         Topmost="{Binding AlwaysOnTop, Mode=OneWay}"
         WindowStartupLocation="CenterScreen">
 
@@ -13,206 +17,227 @@
         <vm:MainViewModel/>
     </Window.DataContext>
 
-    <Grid Margin="22">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="32"
+                            ResizeBorderThickness="6"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False"
+                            CornerRadius="0"/>
+    </shell:WindowChrome.WindowChrome>
 
-        <!-- ヘッダ -->
-        <Grid Grid.Row="0" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+    <Border Background="{StaticResource BgBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <Border Grid.Column="0"
-                    Width="40" Height="40"
-                    Background="{StaticResource CardBrush}"
-                    CornerRadius="10"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1">
-                <Grid>
-                    <Rectangle Width="6" Height="22"
-                               Fill="{StaticResource AccentBrush}"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Center"
-                               Margin="10,0,0,0"
-                               RadiusX="2" RadiusY="2"/>
-                    <Rectangle Width="10" Height="6"
-                               Fill="White"
-                               HorizontalAlignment="Right"
-                               VerticalAlignment="Top"
-                               Margin="0,8,8,0"
-                               RadiusX="1" RadiusY="1"/>
-                </Grid>
-            </Border>
-
-            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="WorkTime" FontSize="22" FontWeight="Bold"/>
-                <TextBlock Text="作業時間を「ただ計る」だけじゃない。"
-                           Foreground="{StaticResource TextSubBrush}"
-                           FontSize="11"
-                           Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
-            </StackPanel>
-
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <CheckBox Content="自動検知"
-                          IsChecked="{Binding AutoDetectEnabled, Mode=TwoWay}"
-                          VerticalAlignment="Center"
-                          Margin="0,0,10,0"
-                          Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
-                <ToggleButton Content="📌"
-                              ToolTip="最前面に固定"
-                              IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}"
-                              Style="{StaticResource IconToggle}"
-                              Margin="0,0,4,0"/>
-                <ToggleButton Content="▭"
-                              ToolTip="コンパクト表示"
-                              IsChecked="{Binding CompactMode, Mode=TwoWay}"
-                              Style="{StaticResource IconToggle}"
-                              Margin="0,0,8,0"/>
-                <Button Content="設定" Style="{StaticResource GhostButton}" Click="OnOpenSettings"
-                        Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
-            </StackPanel>
-        </Grid>
-
-        <!-- ステータス行 -->
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="14,10" Margin="0,0,0,16">
-            <Grid>
+            <!-- ===== Custom Title Bar ===== -->
+            <Grid Grid.Row="0" Background="{StaticResource BgBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="{Binding StatusText}"
-                           FontWeight="Bold">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{StaticResource TextSubBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding StatusKind}" Value="running">
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusKind}" Value="paused">
-                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding StatusDetail}"
-                           Foreground="{StaticResource TextSubBrush}"
-                           Margin="14,0,0,0"
-                           VerticalAlignment="Center"/>
-                <Button Grid.Column="2"
-                        Content="{Binding ToggleButtonLabel}"
-                        Command="{Binding ToggleCommand}"
-                        Style="{StaticResource PrimaryButton}"/>
-            </Grid>
-        </Border>
 
-        <!-- フリップ時計 -->
-        <Grid Grid.Row="2" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <ctrl:FlipCard Grid.Column="0" Margin="0,0,8,0"
-                           Value="{Binding Hours}" Label="時"/>
-            <ctrl:FlipCard Grid.Column="1" Margin="4,0,4,0"
-                           Value="{Binding Minutes}" Label="分"/>
-            <ctrl:FlipCard Grid.Column="2" Margin="8,0,0,0"
-                           Value="{Binding Seconds}" Label="秒"/>
-        </Grid>
-
-        <!-- スコープ切替 -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,12"
-                    Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
-            <ToggleButton Content="今日" Style="{StaticResource ScopeToggle}"
-                          IsChecked="{Binding IsScopeToday, Mode=OneWay}"
-                          Command="{Binding SetScopeCommand}" CommandParameter="today"/>
-            <ToggleButton Content="今週" Style="{StaticResource ScopeToggle}"
-                          IsChecked="{Binding IsScopeWeek, Mode=OneWay}"
-                          Command="{Binding SetScopeCommand}" CommandParameter="week"/>
-            <ToggleButton Content="今月" Style="{StaticResource ScopeToggle}"
-                          IsChecked="{Binding IsScopeMonth, Mode=OneWay}"
-                          Command="{Binding SetScopeCommand}" CommandParameter="month"/>
-            <ToggleButton Content="全期間" Style="{StaticResource ScopeToggle}"
-                          IsChecked="{Binding IsScopeAll, Mode=OneWay}"
-                          Command="{Binding SetScopeCommand}" CommandParameter="all"/>
-        </StackPanel>
-
-        <!-- 進捗 -->
-        <StackPanel Grid.Row="4" Margin="0,0,0,14"
-                    Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
-            <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextSubBrush}" Margin="0,0,0,6"/>
-            <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"/>
-        </StackPanel>
-
-        <!-- プロジェクト別リスト -->
-        <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
-                Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
-            <Grid>
-                <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="プロジェクト" Width="320"
-                                            DisplayMemberBinding="{Binding DisplayName}"/>
-                            <GridViewColumn Header="累計" Width="160"
-                                            DisplayMemberBinding="{Binding TotalString}"/>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-                <!-- 空状態 -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            IsHitTestVisible="False">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasNoProjects}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <TextBlock Text="まだ記録がありません"
+                <!-- 左: アイコン + タイトル -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <Border Width="18" Height="18"
+                            Background="{StaticResource CardBrush}"
+                            CornerRadius="3">
+                        <Grid>
+                            <Rectangle Width="3" Height="11"
+                                       Fill="{StaticResource AccentBrush}"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center"
+                                       Margin="5,0,0,0" RadiusX="1" RadiusY="1"/>
+                            <Rectangle Width="4" Height="3" Fill="White"
+                                       HorizontalAlignment="Right" VerticalAlignment="Top"
+                                       Margin="0,3,3,0"/>
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="WorkTime"
                                Foreground="{StaticResource TextSubBrush}"
-                               FontSize="13"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="対象アプリを起動するか「開始」を押すと計測が始まります"
-                               Foreground="{StaticResource TextSubBrush}"
-                               FontSize="11"
-                               Opacity="0.7"
-                               Margin="0,4,0,0"
-                               HorizontalAlignment="Center"/>
+                               FontSize="11" FontWeight="SemiBold"
+                               Margin="8,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 右: 📌 / ▭ / 最小化 / 閉じる -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            VerticalAlignment="Stretch"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <ToggleButton Content="📌"
+                                  ToolTip="最前面に固定"
+                                  IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}"
+                                  Style="{StaticResource ChromeToggle}"/>
+                    <ToggleButton Content="▭"
+                                  ToolTip="コンパクト表示"
+                                  IsChecked="{Binding CompactMode, Mode=TwoWay}"
+                                  Style="{StaticResource ChromeToggle}"/>
+                    <Button Content="—"
+                            ToolTip="最小化"
+                            Click="OnMinimize"
+                            Style="{StaticResource ChromeButton}"/>
+                    <Button Content="✕"
+                            ToolTip="閉じる"
+                            Click="OnClose"
+                            Style="{StaticResource ChromeCloseButton}"/>
                 </StackPanel>
             </Grid>
-        </Border>
 
-        <!-- フッタ -->
-        <Grid Grid.Row="6" Margin="0,12,0,0"
-              Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0"
-                       Text="WorkTime — log: data/logs/YYYY-MM.csv"
-                       Foreground="{StaticResource TextSubBrush}"
-                       FontSize="11"
-                       VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="今月CSVを開く" Style="{StaticResource GhostButton}" Click="OnOpenCsv"/>
+            <!-- ===== Content ===== -->
+            <Grid Grid.Row="1" Margin="22,8,22,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 自動検知 / 設定 (Compact 非表示) -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right"
+                            Margin="0,0,0,10"
+                            Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <CheckBox Content="自動検知"
+                              IsChecked="{Binding AutoDetectEnabled, Mode=TwoWay}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0"/>
+                    <Button Content="設定" Style="{StaticResource GhostButton}" Click="OnOpenSettings"/>
+                </StackPanel>
+
+                <!-- ステータス行 (Compact 非表示) -->
+                <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
+                        Padding="14,10" Margin="0,0,0,16"
+                        Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding StatusText}"
+                                   FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextSubBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatusKind}" Value="running">
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding StatusKind}" Value="paused">
+                                            <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding StatusDetail}"
+                                   Foreground="{StaticResource TextSubBrush}"
+                                   Margin="14,0,0,0"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="2"
+                                Content="{Binding ToggleButtonLabel}"
+                                Command="{Binding ToggleCommand}"
+                                Style="{StaticResource PrimaryButton}"/>
+                    </Grid>
+                </Border>
+
+                <!-- フリップ時計 (常時表示) -->
+                <Grid Grid.Row="2" Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ctrl:FlipCard Grid.Column="0" Margin="0,0,8,0"
+                                   Value="{Binding Hours}" Label="時"/>
+                    <ctrl:FlipCard Grid.Column="1" Margin="4,0,4,0"
+                                   Value="{Binding Minutes}" Label="分"/>
+                    <ctrl:FlipCard Grid.Column="2" Margin="8,0,0,0"
+                                   Value="{Binding Seconds}" Label="秒"/>
+                </Grid>
+
+                <!-- スコープ切替 (Compact 非表示) -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,12"
+                            Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <ToggleButton Content="今日" Style="{StaticResource ScopeToggle}"
+                                  IsChecked="{Binding IsScopeToday, Mode=OneWay}"
+                                  Command="{Binding SetScopeCommand}" CommandParameter="today"/>
+                    <ToggleButton Content="今週" Style="{StaticResource ScopeToggle}"
+                                  IsChecked="{Binding IsScopeWeek, Mode=OneWay}"
+                                  Command="{Binding SetScopeCommand}" CommandParameter="week"/>
+                    <ToggleButton Content="今月" Style="{StaticResource ScopeToggle}"
+                                  IsChecked="{Binding IsScopeMonth, Mode=OneWay}"
+                                  Command="{Binding SetScopeCommand}" CommandParameter="month"/>
+                    <ToggleButton Content="全期間" Style="{StaticResource ScopeToggle}"
+                                  IsChecked="{Binding IsScopeAll, Mode=OneWay}"
+                                  Command="{Binding SetScopeCommand}" CommandParameter="all"/>
+                </StackPanel>
+
+                <!-- 進捗 (Compact 非表示) -->
+                <StackPanel Grid.Row="4" Margin="0,0,0,14"
+                            Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextSubBrush}" Margin="0,0,0,6"/>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"/>
+                </StackPanel>
+
+                <!-- プロジェクト別リスト (Compact 非表示) -->
+                <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
+                        Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid>
+                        <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="プロジェクト" Width="320"
+                                                    DisplayMemberBinding="{Binding DisplayName}"/>
+                                    <GridViewColumn Header="累計" Width="160"
+                                                    DisplayMemberBinding="{Binding TotalString}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasNoProjects}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="まだ記録がありません"
+                                       Foreground="{StaticResource TextSubBrush}"
+                                       FontSize="13" HorizontalAlignment="Center"/>
+                            <TextBlock Text="対象アプリを起動するか「開始」を押すと計測が始まります"
+                                       Foreground="{StaticResource TextSubBrush}"
+                                       FontSize="11" Opacity="0.7"
+                                       Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- フッタ (Compact 非表示) -->
+                <Grid Grid.Row="6" Margin="0,12,0,0"
+                      Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="WorkTime — log: data/logs/YYYY-MM.csv"
+                               Foreground="{StaticResource TextSubBrush}"
+                               FontSize="11" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="今月CSVを開く" Style="{StaticResource GhostButton}" Click="OnOpenCsv"/>
+                </Grid>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </Window>

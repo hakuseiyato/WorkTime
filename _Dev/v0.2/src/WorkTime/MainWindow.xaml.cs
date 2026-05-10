@@ -22,15 +22,24 @@ public partial class MainWindow : Window
     private double _normalWidth = 640;
     private double _normalHeight = 720;
 
-    private const double CompactWidth = 460;
-    private const double CompactHeight = 290;
+    private const double CompactWidth = 400;
+    private const double CompactHeight = 200;
 
     public MainWindow()
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         Loaded += (_, _) => ApplyPlacement();
         ViewModel.CompactModeChanged += OnCompactModeChanged;
+    }
+
+    private void OnMinimize(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void OnClose(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     /// <summary>
