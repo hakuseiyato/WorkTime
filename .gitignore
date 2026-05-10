@@ -3,6 +3,8 @@ bin/
 obj/
 dist/
 _publish_tmp/
+_package_tmp/
+WorkTime_v*.zip
 *.user
 *.suo
 .vs/
