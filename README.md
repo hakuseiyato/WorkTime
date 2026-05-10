@@ -43,23 +43,31 @@ WorkTime/
 └─ README.md
 ```
 
-## ビルド
+## 配布用ビルド (推奨)
+
+`dist\WorkTime.exe` 1 本だけにまとめる。.NET ランタイム同梱で配布先 PC への SDK インストール不要。
+
+```powershell
+.\publish.ps1
+# 出力: dist\WorkTime.exe (約 70MB, 単一ファイル)
+```
+
+`-Open` を付けると完了後 dist フォルダを開く。
+
+## 開発ビルド
 
 .NET 8 SDK が必要。
 
 ```powershell
 dotnet build WorkTime.sln -c Release
+# dotnet run --project src/WorkTime/WorkTime.csproj
 ```
-
-`src\WorkTime\bin\Release\net8.0-windows\WorkTime.exe` が生成される。
 
 ## 実行
 
-```powershell
-dotnet run --project src/WorkTime/WorkTime.csproj
-```
+`dist\WorkTime.exe` をダブルクリック。`--tray` 引数を付けるとトレイ最小化で起動 (自動起動向け)。
 
-または上記 `WorkTime.exe` を直接実行。`--tray` 引数を付けるとトレイ最小化で起動する (自動起動向け)。
+二重起動防止: 既に起動中の WorkTime がある状態で再度 exe を起動すると、既存のウィンドウが前面化する。
 
 ## 設定
 

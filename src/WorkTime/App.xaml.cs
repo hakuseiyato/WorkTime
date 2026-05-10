@@ -1,7 +1,9 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 using WinForms = System.Windows.Forms;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
@@ -13,11 +15,26 @@ public partial class App : Application
     public static WinForms.NotifyIcon? Tray { get; private set; }
     public static bool IsExiting { get; private set; }
 
+    private const string SingleInstanceMutexName = @"Global\WorkTime.SingleInstance.v1";
+    private static Mutex? _singleInstanceMutex;
+
     private MainWindow? _main;
+    private DispatcherTimer? _trayTooltipTimer;
     private bool _startMinimized;
 
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        // ===== 二重起動防止 =====
+        bool createdNew;
+        _singleInstanceMutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out createdNew);
+        if (!createdNew)
+        {
+            // 既存インスタンスを前面化するシグナルを送る
+            SingleInstanceSignal.NotifyExisting();
+            Shutdown();
+            return;
+        }
+
         // 起動引数: --tray なら最小化起動 (自動起動向け)
         foreach (var a in e.Args)
         {
@@ -33,15 +50,13 @@ public partial class App : Application
 
         _main = new MainWindow();
         InitTray();
+        InitTooltipTimer();
+        SingleInstanceSignal.StartListening(ShowMain);
 
         if (_startMinimized)
-        {
             _main.Hide();
-        }
         else
-        {
             _main.Show();
-        }
     }
 
     private void InitTray()
@@ -65,6 +80,29 @@ public partial class App : Application
         Tray.DoubleClick += (_, _) => ShowMain();
     }
 
+    private void InitTooltipTimer()
+    {
+        // ツールチップ (NotifyIcon.Text) は 63 文字制限。短く更新する。
+        _trayTooltipTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _trayTooltipTimer.Tick += (_, _) => UpdateTrayTooltip();
+        _trayTooltipTimer.Start();
+        UpdateTrayTooltip();
+    }
+
+    private void UpdateTrayTooltip()
+    {
+        if (Tray == null || _main == null) return;
+        var vm = _main.ViewModel;
+        string state = vm.IsRunning ? "●" : "○";
+        string proj = vm.IsRunning && !string.IsNullOrEmpty(vm.Tracker.CurrentProjectKey)
+            ? $" {vm.Tracker.CurrentProjectKey}"
+            : "";
+        string time = $"{vm.Hours}:{vm.Minutes}:{vm.Seconds}";
+        string text = $"WorkTime {state} {time}{proj}";
+        if (text.Length > 63) text = text.Substring(0, 63);
+        Tray.Text = text;
+    }
+
     private void ShowMain()
     {
         if (_main == null) return;
@@ -79,6 +117,7 @@ public partial class App : Application
     private void RequestExit()
     {
         IsExiting = true;
+        _trayTooltipTimer?.Stop();
         _main?.ViewModel.Shutdown();
         if (Tray != null)
         {
@@ -90,12 +129,19 @@ public partial class App : Application
 
     private void OnExit(object sender, ExitEventArgs e)
     {
+        SingleInstanceSignal.StopListening();
         if (Tray != null)
         {
             Tray.Visible = false;
             Tray.Dispose();
             Tray = null;
         }
+        try
+        {
+            _singleInstanceMutex?.ReleaseMutex();
+        }
+        catch { /* 既に解放されている場合は無視 */ }
+        _singleInstanceMutex?.Dispose();
     }
 
     /// <summary>
@@ -116,7 +162,6 @@ public partial class App : Application
             g.FillRectangle(dot, 21, 8, 4, 4);
         }
         IntPtr hIcon = bmp.GetHicon();
-        // 所有権を移譲してクローン化 (元 GDI ハンドルは破棄)
         var icon = (Icon)Icon.FromHandle(hIcon).Clone();
         DestroyIcon(hIcon);
         return icon;

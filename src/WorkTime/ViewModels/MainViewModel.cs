@@ -93,6 +93,8 @@ public class MainViewModel : ObservableObject
             {
                 Config.AutoDetectEnabled = value;
                 ConfigStore.Save(Config);
+                // 即時反映: トグルした瞬間に検知/停止が効くようにする
+                OnMonitorTick();
             }
         }
     }
