@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using WorkTime.Models;
 
 namespace WorkTime.Services;
@@ -13,7 +14,9 @@ public static class ConfigStore
     private static readonly JsonSerializerOptions _options = new()
     {
         WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        // double.NaN / Infinity を文字列 "NaN" として書き出せるようにする (WindowLeft/Top の未設定値に利用)
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
     };
 
     public static string ConfigDir => Path.Combine(AppContext.BaseDirectory, "data");
@@ -41,9 +44,16 @@ public static class ConfigStore
 
     public static void Save(AppConfig config)
     {
-        Directory.CreateDirectory(ConfigDir);
-        var json = JsonSerializer.Serialize(config, _options);
-        File.WriteAllText(ConfigPath, json);
+        try
+        {
+            Directory.CreateDirectory(ConfigDir);
+            var json = JsonSerializer.Serialize(config, _options);
+            File.WriteAllText(ConfigPath, json);
+        }
+        catch
+        {
+            // 保存失敗は致命ではないので握りつぶす (起動阻害を避ける)
+        }
     }
 
     private static AppConfig CreateDefault()
