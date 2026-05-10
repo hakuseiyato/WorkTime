@@ -79,8 +79,21 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusText}"
-                           Foreground="{StaticResource AccentBrush}"
-                           FontWeight="Bold"/>
+                           FontWeight="Bold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource TextSubBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StatusKind}" Value="running">
+                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding StatusKind}" Value="paused">
+                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
                 <TextBlock Grid.Column="1"
                            Text="{Binding StatusDetail}"
                            Foreground="{StaticResource TextSubBrush}"
@@ -132,16 +145,42 @@
 
         <!-- プロジェクト別リスト -->
         <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2">
-            <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="プロジェクト" Width="320"
-                                        DisplayMemberBinding="{Binding DisplayName}"/>
-                        <GridViewColumn Header="累計" Width="160"
-                                        DisplayMemberBinding="{Binding TotalString}"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
+            <Grid>
+                <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="プロジェクト" Width="320"
+                                            DisplayMemberBinding="{Binding DisplayName}"/>
+                            <GridViewColumn Header="累計" Width="160"
+                                            DisplayMemberBinding="{Binding TotalString}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <!-- 空状態 -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasNoProjects}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="まだ記録がありません"
+                               Foreground="{StaticResource TextSubBrush}"
+                               FontSize="13"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="対象アプリを起動するか「開始」を押すと計測が始まります"
+                               Foreground="{StaticResource TextSubBrush}"
+                               FontSize="11"
+                               Opacity="0.7"
+                               Margin="0,4,0,0"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- フッタ -->

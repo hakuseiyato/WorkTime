@@ -45,6 +45,12 @@ public class MainViewModel : ObservableObject
     private string _statusDetail = "";
     public string StatusDetail { get => _statusDetail; set => SetProperty(ref _statusDetail, value); }
 
+    /// <summary>"running" / "paused" / "stopped" — XAML 側で DataTrigger で配色を切り替える。</summary>
+    private string _statusKind = "stopped";
+    public string StatusKind { get => _statusKind; set => SetProperty(ref _statusKind, value); }
+
+    public bool HasNoProjects => ProjectSummaries.Count == 0;
+
     private bool _isRunning;
     public bool IsRunning
     {
@@ -174,6 +180,7 @@ public class MainViewModel : ObservableObject
             _pausedProcessName = null;
             Tracker.Start("Manual", "Manual", "manual");
         }
+        UpdateStatus();
         Refresh();
     }
 
@@ -303,6 +310,7 @@ public class MainViewModel : ObservableObject
                 Total = kv.Value
             });
         }
+        OnPropertyChanged(nameof(HasNoProjects));
 
         if (target.TotalSeconds > 0)
         {
@@ -379,11 +387,19 @@ public class MainViewModel : ObservableObject
         {
             StatusText = Tracker.CurrentSource == "auto" ? "● 自動計測中" : "● 手動計測中";
             StatusDetail = Tracker.CurrentProjectKey;
+            StatusKind = "running";
+        }
+        else if (_pausedProcessName != null)
+        {
+            StatusText = "⏸ 一時停止中";
+            StatusDetail = $"{_pausedProcessName} 起動中 — 再開するには「開始」を押下";
+            StatusKind = "paused";
         }
         else
         {
             StatusText = "○ 停止中";
             StatusDetail = AutoDetectEnabled ? "対象アプリ起動を待機中" : "手動モード";
+            StatusKind = "stopped";
         }
     }
 

@@ -27,9 +27,10 @@
                            FontSize="84"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"/>
-                <Rectangle Height="1"
-                           Fill="#33000000"
-                           VerticalAlignment="Center"/>
+                <Rectangle Height="2"
+                           Fill="#FF12131A"
+                           VerticalAlignment="Center"
+                           Margin="6,0"/>
             </Grid>
             <TextBlock Grid.Row="1"
                        Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
