@@ -75,9 +75,35 @@ public partial class App : Application
                 _main.ViewModel.ToggleCommand.Execute(null);
         });
         menu.Items.Add(new WinForms.ToolStripSeparator());
+
+        // 最前面に固定
+        var pinItem = new WinForms.ToolStripMenuItem("最前面に固定") { CheckOnClick = true };
+        pinItem.Click += (_, _) =>
+        {
+            if (_main != null) _main.ViewModel.AlwaysOnTop = pinItem.Checked;
+        };
+        menu.Items.Add(pinItem);
+
+        // コンパクト表示
+        var compactItem = new WinForms.ToolStripMenuItem("コンパクト表示") { CheckOnClick = true };
+        compactItem.Click += (_, _) =>
+        {
+            if (_main != null) _main.ViewModel.CompactMode = compactItem.Checked;
+        };
+        menu.Items.Add(compactItem);
+
+        menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("終了", null, (_, _) => RequestExit());
         Tray.ContextMenuStrip = menu;
         Tray.DoubleClick += (_, _) => ShowMain();
+
+        // メニューを開く直前にチェック状態を VM から同期
+        menu.Opening += (_, _) =>
+        {
+            if (_main == null) return;
+            pinItem.Checked = _main.ViewModel.AlwaysOnTop;
+            compactItem.Checked = _main.ViewModel.CompactMode;
+        };
     }
 
     private void InitTooltipTimer()

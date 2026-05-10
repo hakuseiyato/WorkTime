@@ -5,7 +5,8 @@
         xmlns:ctrl="clr-namespace:WorkTime.Controls"
         Title="WorkTime"
         Width="640" Height="720"
-        MinWidth="520" MinHeight="600"
+        MinWidth="380" MinHeight="280"
+        Topmost="{Binding AlwaysOnTop, Mode=OneWay}"
         WindowStartupLocation="CenterScreen">
 
     <Window.DataContext>
@@ -57,15 +58,28 @@
                 <TextBlock Text="WorkTime" FontSize="22" FontWeight="Bold"/>
                 <TextBlock Text="作業時間を「ただ計る」だけじゃない。"
                            Foreground="{StaticResource TextSubBrush}"
-                           FontSize="11"/>
+                           FontSize="11"
+                           Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <CheckBox Content="自動検知"
                           IsChecked="{Binding AutoDetectEnabled, Mode=TwoWay}"
                           VerticalAlignment="Center"
-                          Margin="0,0,12,0"/>
-                <Button Content="設定" Style="{StaticResource GhostButton}" Click="OnOpenSettings"/>
+                          Margin="0,0,10,0"
+                          Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
+                <ToggleButton Content="📌"
+                              ToolTip="最前面に固定"
+                              IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}"
+                              Style="{StaticResource IconToggle}"
+                              Margin="0,0,4,0"/>
+                <ToggleButton Content="▭"
+                              ToolTip="コンパクト表示"
+                              IsChecked="{Binding CompactMode, Mode=TwoWay}"
+                              Style="{StaticResource IconToggle}"
+                              Margin="0,0,8,0"/>
+                <Button Content="設定" Style="{StaticResource GhostButton}" Click="OnOpenSettings"
+                        Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}"/>
             </StackPanel>
         </Grid>
 
@@ -122,7 +136,8 @@
         </Grid>
 
         <!-- スコープ切替 -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,12">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,12"
+                    Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
             <ToggleButton Content="今日" Style="{StaticResource ScopeToggle}"
                           IsChecked="{Binding IsScopeToday, Mode=OneWay}"
                           Command="{Binding SetScopeCommand}" CommandParameter="today"/>
@@ -138,13 +153,15 @@
         </StackPanel>
 
         <!-- 進捗 -->
-        <StackPanel Grid.Row="4" Margin="0,0,0,14">
+        <StackPanel Grid.Row="4" Margin="0,0,0,14"
+                    Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
             <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextSubBrush}" Margin="0,0,0,6"/>
             <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"/>
         </StackPanel>
 
         <!-- プロジェクト別リスト -->
-        <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2">
+        <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
+                Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
             <Grid>
                 <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
                     <ListView.View>
@@ -184,7 +201,8 @@
         </Border>
 
         <!-- フッタ -->
-        <Grid Grid.Row="6" Margin="0,12,0,0">
+        <Grid Grid.Row="6" Margin="0,12,0,0"
+              Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

@@ -112,6 +112,38 @@ public class MainViewModel : ObservableObject
         }
     }
 
+    private bool _alwaysOnTop;
+    public bool AlwaysOnTop
+    {
+        get => _alwaysOnTop;
+        set
+        {
+            if (SetProperty(ref _alwaysOnTop, value))
+            {
+                Config.AlwaysOnTop = value;
+                ConfigStore.Save(Config);
+            }
+        }
+    }
+
+    private bool _compactMode;
+    public bool CompactMode
+    {
+        get => _compactMode;
+        set
+        {
+            if (SetProperty(ref _compactMode, value))
+            {
+                Config.CompactMode = value;
+                ConfigStore.Save(Config);
+                CompactModeChanged?.Invoke(value);
+            }
+        }
+    }
+
+    /// <summary>CompactMode が変化したときにウィンドウ側がリサイズできるよう通知。</summary>
+    public event Action<bool>? CompactModeChanged;
+
     // ===== コマンド =====
 
     public RelayCommand ToggleCommand { get; }
@@ -121,6 +153,8 @@ public class MainViewModel : ObservableObject
     {
         Config = ConfigStore.Load();
         _autoDetectEnabled = Config.AutoDetectEnabled;
+        _alwaysOnTop = Config.AlwaysOnTop;
+        _compactMode = Config.CompactMode;
         _scope = string.IsNullOrWhiteSpace(Config.TargetScope) ? "today" : Config.TargetScope;
 
         Logger = new CsvLogger();

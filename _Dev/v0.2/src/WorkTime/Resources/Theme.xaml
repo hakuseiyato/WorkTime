@@ -106,6 +106,41 @@
         </Setter>
     </Style>
 
+    <!-- アイコントグル (📌 最前面 / ▭ コンパクト) — 30x30 の正方形ボタン -->
+    <Style x:Key="IconToggle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSubBrush}"/>
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentDarkBrush}"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- スコープ用トグルボタン -->
     <Style x:Key="ScopeToggle" TargetType="ToggleButton">
         <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
@@ -199,9 +234,9 @@
         <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
     </Style>
 
-    <!-- ProgressBar (シアン進捗) — トラックは bg にほぼ同化させる -->
+    <!-- ProgressBar — トラックは BG と完全同色にして 0% で見えないようにする -->
     <Style TargetType="ProgressBar">
-        <Setter Property="Background" Value="{StaticResource TrackBrush}"/>
+        <Setter Property="Background" Value="{StaticResource BgBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Height" Value="6"/>

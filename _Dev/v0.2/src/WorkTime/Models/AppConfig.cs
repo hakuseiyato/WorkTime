@@ -34,6 +34,20 @@ public class AppConfig
 
     /// <summary>OS 起動時に自動起動するか (HKCU\Run に登録)。</summary>
     public bool LaunchAtStartup { get; set; } = false;
+
+    /// <summary>true で常にウィンドウを最前面に固定。</summary>
+    public bool AlwaysOnTop { get; set; } = false;
+
+    /// <summary>true でコンパクト表示 (時計と状態のみ)。</summary>
+    public bool CompactMode { get; set; } = false;
+
+    // ===== ウィンドウ位置/サイズの永続化 =====
+    public double WindowLeft { get; set; } = double.NaN;
+    public double WindowTop { get; set; } = double.NaN;
+    public double WindowWidth { get; set; } = 640;
+    public double WindowHeight { get; set; } = 720;
+    /// <summary>"Normal" / "Maximized" — 最大化中に閉じた場合復元する用。</summary>
+    public string WindowStateName { get; set; } = "Normal";
 }
 
 /// <summary>
