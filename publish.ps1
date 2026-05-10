@@ -1,27 +1,48 @@
-# WorkTime — 単一 exe ビルドスクリプト
-# dist\WorkTime.exe 1 本だけを出力する。.NET ランタイム同梱。
+# WorkTime - single-exe publish script
 #
-# 使い方:
+# What it does:
+#   1. Find the latest _Dev/v* folder and publish its WorkTime.csproj
+#      as a single-file self-contained exe.
+#   2. Copy the resulting WorkTime.exe to the repository root.
+#   3. Clean up the intermediate folder unless -KeepTmp is specified.
+#
+# Usage:
 #   .\publish.ps1
-#   .\publish.ps1 -Open    # ビルド後に dist フォルダを開く
+#   .\publish.ps1 -KeepTmp
+#   .\publish.ps1 -Open
 
 param(
+    [switch]$KeepTmp,
     [switch]$Open
 )
 
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$proj = Join-Path $root 'src\WorkTime\WorkTime.csproj'
-$dist = Join-Path $root 'dist'
 
-Write-Host "==> Cleaning dist/" -ForegroundColor Cyan
-if (Test-Path $dist) {
-    Remove-Item $dist -Recurse -Force
+# Pick the newest v* folder under _Dev/
+$devRoot = Join-Path $root '_Dev'
+$versionDir = Get-ChildItem $devRoot -Directory |
+    Where-Object { $_.Name -like 'v*' } |
+    Sort-Object Name -Descending |
+    Select-Object -First 1
+if (-not $versionDir) {
+    throw 'No v* folder found under _Dev/'
 }
-New-Item -ItemType Directory -Path $dist | Out-Null
+$proj = Join-Path $versionDir.FullName 'src\WorkTime\WorkTime.csproj'
+if (-not (Test-Path $proj)) {
+    throw ('csproj not found: ' + $proj)
+}
 
-Write-Host "==> Publishing single-file self-contained exe..." -ForegroundColor Cyan
+$tmp    = Join-Path $root '_publish_tmp'
+$outExe = Join-Path $root 'WorkTime.exe'
+
+Write-Host "==> Source: $proj" -ForegroundColor Cyan
+
+if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+New-Item -ItemType Directory -Path $tmp | Out-Null
+
+Write-Host '==> Publishing single-file self-contained exe...' -ForegroundColor Cyan
 dotnet publish $proj `
     -c Release `
     -r win-x64 `
@@ -30,24 +51,35 @@ dotnet publish $proj `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:EnableCompressionInSingleFile=true `
     -p:DebugType=embedded `
-    -o $dist
+    -o $tmp
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "publish failed." -ForegroundColor Red
+    Write-Host 'publish failed.' -ForegroundColor Red
     exit 1
 }
 
-# .pdb など余計なものは消す
-Get-ChildItem $dist -File | Where-Object { $_.Extension -in '.pdb','.xml' } | Remove-Item -Force
-
-Write-Host ""
-Write-Host "==> Done." -ForegroundColor Green
-$exe = Join-Path $dist 'WorkTime.exe'
-if (Test-Path $exe) {
-    $size = [math]::Round((Get-Item $exe).Length / 1MB, 1)
-    Write-Host ("  {0}  ({1} MB)" -f $exe, $size) -ForegroundColor Green
+$tmpExe = Join-Path $tmp 'WorkTime.exe'
+if (-not (Test-Path $tmpExe)) {
+    throw ('Publish output is missing: ' + $tmpExe)
 }
 
+try {
+    Copy-Item $tmpExe $outExe -Force
+} catch {
+    Write-Host 'Failed to overwrite WorkTime.exe. Close the running WorkTime and try again.' -ForegroundColor Yellow
+    Write-Host ('  detail: ' + $_.Exception.Message) -ForegroundColor Yellow
+    exit 1
+}
+
+if (-not $KeepTmp) {
+    Remove-Item $tmp -Recurse -Force
+}
+
+$size = [math]::Round((Get-Item $outExe).Length / 1MB, 1)
+Write-Host ''
+Write-Host '==> Done.' -ForegroundColor Green
+Write-Host ('  ' + $outExe + '  (' + $size + ' MB)') -ForegroundColor Green
+
 if ($Open) {
-    Start-Process explorer.exe $dist
+    Start-Process explorer.exe $root
 }
