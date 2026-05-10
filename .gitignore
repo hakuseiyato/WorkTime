@@ -1,0 +1,18 @@
+# Build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Runtime data (logs/config はリポジトリ管理外)
+data/logs/
+data/config.json
+
+# IDE
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
