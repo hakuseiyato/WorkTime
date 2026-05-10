@@ -386,7 +386,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="ScrollBar">
                             <Grid Background="{TemplateBinding Background}">
-                                <Track Name="PART_Track" IsDirectionReversed="False">
+                                <Track Name="PART_Track" IsDirectionReversed="False" Orientation="Horizontal">
                                     <Track.Thumb>
                                         <Thumb Style="{StaticResource ScrollBarThumbStyle}"/>
                                     </Track.Thumb>

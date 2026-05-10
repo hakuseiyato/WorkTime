@@ -189,6 +189,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnOpenExport(object sender, RoutedEventArgs e)
+    {
+        var dlg = new ExportDialog
+        {
+            Owner = this,
+            DataContext = new ExportViewModel(ViewModel.Logger)
+        };
+        dlg.ShowDialog();
+    }
+
     private void OnOpenCsv(object sender, RoutedEventArgs e)
     {
         var path = ViewModel.Logger.GetLogPath(DateTime.Now);

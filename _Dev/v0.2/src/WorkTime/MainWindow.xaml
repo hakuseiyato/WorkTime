@@ -230,12 +230,14 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                Text="WorkTime — log: data/logs/YYYY-MM.csv"
                                Foreground="{StaticResource TextSubBrush}"
                                FontSize="11" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Content="今月CSVを開く" Style="{StaticResource GhostButton}" Click="OnOpenCsv"/>
+                    <Button Grid.Column="1" Content="集計エクスポート" Style="{StaticResource GhostButton}" Click="OnOpenExport" Margin="0,0,6,0"/>
+                    <Button Grid.Column="2" Content="今月CSVを開く" Style="{StaticResource GhostButton}" Click="OnOpenCsv"/>
                 </Grid>
             </Grid>
         </Grid>

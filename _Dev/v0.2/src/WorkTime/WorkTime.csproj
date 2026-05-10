@@ -12,7 +12,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>Resources\WorkTime.ico</ApplicationIcon>
-    <Version>0.2.2</Version>
+    <Version>0.3.2</Version>
     <Authors>Yato</Authors>
     <Product>WorkTime</Product>
 
