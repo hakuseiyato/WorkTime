@@ -16,6 +16,13 @@ public class MainViewModel : ObservableObject
     private readonly DispatcherTimer _tickTimer;
     private readonly DispatcherTimer _monitorTimer;
 
+    /// <summary>
+    /// ユーザーが「停止」を押した直後の対象プロセス名。
+    /// 同じプロセスが起動し続けている間は自動再開を抑止する。
+    /// 別アプリに切り替わる、または対象が全て閉じられたら null に戻す。
+    /// </summary>
+    private string? _pausedProcessName;
+
     public AppConfig Config { get; private set; }
     public ProcessMonitor Monitor { get; }
     public TimeTracker Tracker { get; }
@@ -153,10 +160,18 @@ public class MainViewModel : ObservableObject
     {
         if (Tracker.IsRunning)
         {
+            // 自動セッションを手動停止した場合、同じ対象が起動している限り再開させない
+            bool wasAuto = Tracker.CurrentSource == "auto";
+            string pausedName = Tracker.CurrentProcessName;
             Tracker.Stop();
+            _pausedProcessName = (wasAuto && AutoDetectEnabled && !string.IsNullOrEmpty(pausedName))
+                ? pausedName
+                : null;
         }
         else
         {
+            // 手動 Start: 一時停止を解除
+            _pausedProcessName = null;
             Tracker.Start("Manual", "Manual", "manual");
         }
         Refresh();
@@ -184,6 +199,21 @@ public class MainViewModel : ObservableObject
         var idleMin = Math.Max(0, Config.IdleThresholdMinutes);
         var idle = IdleDetector.GetIdleTime();
         bool isIdle = idleMin > 0 && idle >= TimeSpan.FromMinutes(idleMin);
+
+        // 手動停止スナップショット: 同一対象が動いてる間は静観
+        if (_pausedProcessName != null)
+        {
+            if (hit == null ||
+                !string.Equals(hit.ProcessName, _pausedProcessName, StringComparison.OrdinalIgnoreCase))
+            {
+                // 対象が消えた / 別アプリに切り替わった → 一時停止解除
+                _pausedProcessName = null;
+            }
+            else
+            {
+                return;
+            }
+        }
 
         if (hit != null && !isIdle)
         {

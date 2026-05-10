@@ -145,10 +145,25 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// アイコンファイルを同梱しないので、簡易にビットマップから生成する。
+    /// 埋め込みリソースからマルチサイズ ICO を読み込む。
     /// </summary>
     private static Icon BuildIcon()
     {
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Resources/WorkTime.ico", UriKind.Absolute);
+            var sri = Application.GetResourceStream(uri);
+            if (sri != null)
+            {
+                using var s = sri.Stream;
+                return new Icon(s);
+            }
+        }
+        catch
+        {
+            // フォールバックへ
+        }
+
         const int size = 32;
         using var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(bmp))
@@ -156,7 +171,7 @@ public partial class App : Application
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             using var bg = new SolidBrush(Color.FromArgb(255, 26, 27, 31));
             g.FillRectangle(bg, 0, 0, size, size);
-            using var bar = new SolidBrush(Color.FromArgb(255, 91, 184, 209)); // cyan #5BB8D1
+            using var bar = new SolidBrush(Color.FromArgb(255, 91, 184, 209));
             g.FillRectangle(bar, 11, 6, 5, 20);
             using var dot = new SolidBrush(Color.White);
             g.FillRectangle(dot, 21, 8, 4, 4);

@@ -24,6 +24,7 @@ public class TimeTracker
     public DateTime? SessionStart => _sessionStart;
 
     public string CurrentProjectKey => _projectKey;
+    public string CurrentProcessName => _processName;
     public string CurrentSource => _source;
 
     public event Action? SessionChanged;

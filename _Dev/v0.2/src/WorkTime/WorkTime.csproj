@@ -11,7 +11,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>0.2.0</Version>
+    <ApplicationIcon>Resources\WorkTime.ico</ApplicationIcon>
+    <Version>0.2.2</Version>
     <Authors>Yato</Authors>
     <Product>WorkTime</Product>
 
@@ -23,6 +24,7 @@
     <None Update="app.manifest">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
+    <Resource Include="Resources\WorkTime.ico" />
   </ItemGroup>
 
 </Project>
