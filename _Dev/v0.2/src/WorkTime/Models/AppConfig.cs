@@ -48,6 +48,12 @@ public class AppConfig
     public double WindowHeight { get; set; } = 720;
     /// <summary>"Normal" / "Maximized" — 最大化中に閉じた場合復元する用。</summary>
     public string WindowStateName { get; set; } = "Normal";
+
+    /// <summary>
+    /// チェックを外したプロジェクトキーの一覧 (大文字小文字無視)。
+    /// 既定はすべて選択 (= リストに無い)。エクスポート対象除外に利用。
+    /// </summary>
+    public List<string> UnselectedProjects { get; set; } = new();
 }
 
 /// <summary>

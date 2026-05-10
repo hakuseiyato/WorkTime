@@ -51,6 +51,23 @@ public class MainViewModel : ObservableObject
 
     public bool HasNoProjects => ProjectSummaries.Count == 0;
 
+    private void OnProjectSummaryPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ProjectSummary.IsSelected)) return;
+        if (sender is not ProjectSummary ps) return;
+        Config.UnselectedProjects ??= new();
+        var list = Config.UnselectedProjects;
+        if (ps.IsSelected)
+        {
+            list.RemoveAll(s => string.Equals(s, ps.ProjectKey, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (!list.Any(s => string.Equals(s, ps.ProjectKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            list.Add(ps.ProjectKey);
+        }
+        ConfigStore.Save(Config);
+    }
+
     private bool _isRunning;
     public bool IsRunning
     {
@@ -334,15 +351,23 @@ public class MainViewModel : ObservableObject
 
         UpdateClockFromSpan(total);
 
+        // 既存の購読を解除して Clear
+        foreach (var ps in ProjectSummaries)
+            ps.PropertyChanged -= OnProjectSummaryPropertyChanged;
         ProjectSummaries.Clear();
+
+        var unselected = new HashSet<string>(Config.UnselectedProjects ?? new(), StringComparer.OrdinalIgnoreCase);
         foreach (var kv in perProject.OrderByDescending(p => p.Value))
         {
-            ProjectSummaries.Add(new ProjectSummary
+            var ps = new ProjectSummary
             {
                 ProjectKey = kv.Key,
                 DisplayName = kv.Key,
-                Total = kv.Value
-            });
+                Total = kv.Value,
+                IsSelected = !unselected.Contains(kv.Key)
+            };
+            ps.PropertyChanged += OnProjectSummaryPropertyChanged;
+            ProjectSummaries.Add(ps);
         }
         OnPropertyChanged(nameof(HasNoProjects));
 

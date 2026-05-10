@@ -194,7 +194,16 @@
                         <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="プロジェクト" Width="320"
+                                    <GridViewColumn Header="" Width="40">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                          HorizontalAlignment="Center"
+                                                          ToolTip="エクスポート対象"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="プロジェクト" Width="280"
                                                     DisplayMemberBinding="{Binding DisplayName}"/>
                                     <GridViewColumn Header="累計" Width="160"
                                                     DisplayMemberBinding="{Binding TotalString}"/>

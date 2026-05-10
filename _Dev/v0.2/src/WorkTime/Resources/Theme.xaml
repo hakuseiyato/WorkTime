@@ -305,6 +305,27 @@
         <Setter Property="Padding" Value="10,7"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <!-- 表示専用 (Hover/Press/Focus 状態を一切持たない) -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GridViewColumnHeader">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- GridView 全体のヘッダ背景帯 (空の右端) も Surface に揃える -->
+    <Style TargetType="ScrollViewer" x:Key="GridViewHeaderRowPresenterScrollViewerStyle">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
     </Style>
 
     <!-- CheckBox -->

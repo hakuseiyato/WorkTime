@@ -194,7 +194,7 @@ public partial class MainWindow : Window
         var dlg = new ExportDialog
         {
             Owner = this,
-            DataContext = new ExportViewModel(ViewModel.Logger)
+            DataContext = new ExportViewModel(ViewModel.Logger, ViewModel.Config)
         };
         dlg.ShowDialog();
     }

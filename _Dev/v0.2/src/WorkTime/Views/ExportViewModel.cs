@@ -16,6 +16,7 @@ namespace WorkTime.Views;
 public class ExportViewModel : ObservableObject
 {
     private readonly CsvLogger _logger;
+    private readonly AppConfig _config;
 
     private DateTime _fromDate;
     public DateTime FromDate
@@ -66,9 +67,10 @@ public class ExportViewModel : ObservableObject
         private set => SetProperty(ref _selectedSessionCount, value);
     }
 
-    public ExportViewModel(CsvLogger logger)
+    public ExportViewModel(CsvLogger logger, AppConfig config)
     {
         _logger = logger;
+        _config = config;
         var now = DateTime.Now;
         _fromDate = new DateTime(now.Year, now.Month, 1);
         _toDate = now.Date;
@@ -116,7 +118,19 @@ public class ExportViewModel : ObservableObject
     {
         if (_toDate < _fromDate) return;
 
-        var prev = Projects.ToDictionary(p => p.ProjectKey, p => p.IsSelected, StringComparer.OrdinalIgnoreCase);
+        // 既存のチェック状態を維持。初回は AppConfig.UnselectedProjects から導出。
+        Dictionary<string, bool> prev;
+        if (Projects.Count == 0)
+        {
+            var unset = new HashSet<string>(_config.UnselectedProjects ?? new(), StringComparer.OrdinalIgnoreCase);
+            prev = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            // すべて初期 true。unselected に入っているキーだけ false。
+            foreach (var key in unset) prev[key] = false;
+        }
+        else
+        {
+            prev = Projects.ToDictionary(p => p.ProjectKey, p => p.IsSelected, StringComparer.OrdinalIgnoreCase);
+        }
         Projects.Clear();
 
         var to = _toDate.Date.AddDays(1);

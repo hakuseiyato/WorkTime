@@ -3,6 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="WorkTime — 設定"
         Width="560" Height="600"
+        Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Yu Gothic UI, Segoe UI"
+        FontSize="13"
         WindowStartupLocation="CenterOwner">
 
     <Grid Margin="18">
