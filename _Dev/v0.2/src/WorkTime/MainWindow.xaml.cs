@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
     }
 
     protected override void OnClosing(CancelEventArgs e)
