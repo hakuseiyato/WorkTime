@@ -5,6 +5,8 @@ dist/
 _publish_tmp/
 _package_tmp/
 WorkTime_v*.zip
+# 配布物は GitHub Releases にアップロードするのでルートの exe は git 管理外
+/WorkTime.exe
 *.user
 *.suo
 .vs/
