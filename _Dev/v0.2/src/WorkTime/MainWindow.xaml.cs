@@ -74,7 +74,8 @@ public partial class MainWindow : Window
         if (string.Equals(c.WindowStateName, "Maximized", StringComparison.OrdinalIgnoreCase) && !c.CompactMode)
             WindowState = WindowState.Maximized;
 
-        Topmost = c.AlwaysOnTop;
+        // Topmost は XAML の {Binding AlwaysOnTop} で同期される。
+        // 直接代入するとバインディングを上書きして以降の変更が効かなくなるので触らない。
         AdjustRowHeights(c.CompactMode);
     }
 
