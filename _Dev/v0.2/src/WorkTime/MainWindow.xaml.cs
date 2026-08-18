@@ -30,6 +30,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         Loaded += (_, _) => ApplyPlacement();
         ViewModel.CompactModeChanged += OnCompactModeChanged;
+        ViewModel.AlwaysOnTopChanged += v => Topmost = v;
     }
 
     private void OnMinimize(object sender, RoutedEventArgs e)
@@ -74,8 +75,8 @@ public partial class MainWindow : Window
         if (string.Equals(c.WindowStateName, "Maximized", StringComparison.OrdinalIgnoreCase) && !c.CompactMode)
             WindowState = WindowState.Maximized;
 
-        // Topmost は XAML の {Binding AlwaysOnTop} で同期される。
-        // 直接代入するとバインディングを上書きして以降の変更が効かなくなるので触らない。
+        // Topmost はバインディングではなくコードで一元管理する (AlwaysOnTopChanged で追随)。
+        Topmost = c.AlwaysOnTop;
         AdjustRowHeights(c.CompactMode);
     }
 
@@ -122,8 +123,10 @@ public partial class MainWindow : Window
     private void AdjustRowHeights(bool compact)
     {
         if (Content is not System.Windows.Controls.Grid grid) return;
-        if (grid.RowDefinitions.Count < 6) return;
-        grid.RowDefinitions[5].Height = compact
+        if (grid.RowDefinitions.Count < 7) return;
+        // 注: Content は Border なので現状このメソッドは早期 return する (既知)。
+        // メモ行追加でスター行は 5 → 6 に移動している。
+        grid.RowDefinitions[6].Height = compact
             ? new GridLength(0)
             : new GridLength(1, GridUnitType.Star);
     }
@@ -216,5 +219,25 @@ public partial class MainWindow : Window
         {
             MessageBox.Show(this, $"開けませんでした: {ex.Message}", "WorkTime", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    /// <summary>
+    /// 開始打刻ボタン: 計測中セッションの開始時刻を手動修正する。
+    /// </summary>
+    private void OnEditStartTime(object sender, RoutedEventArgs e)
+    {
+        var tracker = ViewModel.Tracker;
+        if (!tracker.IsRunning) return;
+
+        var dlg = new TimeEditDialog(tracker.SessionStart!.Value.TimeOfDay) { Owner = this };
+        if (dlg.ShowDialog() != true || dlg.Result == null) return;
+
+        if (!tracker.AdjustStart(DateTime.Now.Date + dlg.Result.Value))
+        {
+            MessageBox.Show(this, "未来の時刻や日付を跨ぐ時刻には変更できません。",
+                "WorkTime", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        ViewModel.Refresh();
     }
 }

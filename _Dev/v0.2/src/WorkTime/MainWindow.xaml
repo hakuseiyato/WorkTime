@@ -10,7 +10,6 @@
         WindowStyle="None"
         AllowsTransparency="False"
         ResizeMode="CanResize"
-        Topmost="{Binding AlwaysOnTop, Mode=OneWay}"
         WindowStartupLocation="CenterScreen">
 
     <Window.DataContext>
@@ -90,12 +89,21 @@
             <Grid Grid.Row="1" Margin="22,8,22,22">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <!-- 自動検知/設定 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- ステータス行 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- メモ行 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- フリップ時計 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- スコープ切替 -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 進捗 -->
                     <RowDefinition Height="*"/>
+                    <!-- プロジェクト別リスト -->
                     <RowDefinition Height="Auto"/>
+                    <!-- フッタ -->
                 </Grid.RowDefinitions>
 
                 <!-- 自動検知 / 設定 (Compact 非表示) -->
@@ -117,6 +125,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
@@ -141,15 +150,73 @@
                                    Foreground="{StaticResource TextSubBrush}"
                                    Margin="14,0,0,0"
                                    VerticalAlignment="Center"/>
+                        <!-- 開始打刻 (計測中のみ表示。クリックで開始時刻を修正) -->
                         <Button Grid.Column="2"
+                                Content="{Binding SessionStartText}"
+                                ToolTip="開始時刻を修正"
+                                Click="OnEditStartTime"
+                                Margin="0,0,8,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SessionStartText}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Grid.Column="3"
                                 Content="{Binding ToggleButtonLabel}"
                                 Command="{Binding ToggleCommand}"
                                 Style="{StaticResource PrimaryButton}"/>
                     </Grid>
                 </Border>
 
+                <!-- メモ行 (Compact 非表示) -->
+                <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
+                        Padding="14,10" Margin="0,0,0,16"
+                        Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0" Margin="0,0,10,0">
+                            <TextBox x:Name="MemoBox"
+                                     Text="{Binding Memo, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{StaticResource TextBrush}"
+                                     VerticalAlignment="Center"/>
+                            <!-- プレースホルダ: メモが空のときだけ表示する -->
+                            <TextBlock Text="今から何をする？"
+                                       Foreground="{StaticResource TextSubBrush}"
+                                       IsHitTestVisible="False"
+                                       VerticalAlignment="Center"
+                                       Margin="2,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=MemoBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                        <Button Grid.Column="1"
+                                Content="⚑ 打刻"
+                                ToolTip="現在時刻にマーカーを残す (作業時間には影響しません)"
+                                Command="{Binding MarkCommand}"
+                                Style="{StaticResource GhostButton}"/>
+                    </Grid>
+                </Border>
+
                 <!-- フリップ時計 (常時表示) -->
-                <Grid Grid.Row="2" Margin="0,0,0,0">
+                <Grid Grid.Row="3" Margin="0,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -164,7 +231,7 @@
                 </Grid>
 
                 <!-- スコープ切替 (Compact 非表示) -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,12"
+                <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,14,0,12"
                             Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <ToggleButton Content="今日" Style="{StaticResource ScopeToggle}"
                                   IsChecked="{Binding IsScopeToday, Mode=OneWay}"
@@ -181,14 +248,14 @@
                 </StackPanel>
 
                 <!-- 進捗 (Compact 非表示) -->
-                <StackPanel Grid.Row="4" Margin="0,0,0,14"
+                <StackPanel Grid.Row="5" Margin="0,0,0,14"
                             Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextSubBrush}" Margin="0,0,0,6"/>
                     <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"/>
                 </StackPanel>
 
                 <!-- プロジェクト別リスト (Compact 非表示) -->
-                <Border Grid.Row="5" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
+                <Border Grid.Row="6" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
                         Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <Grid>
                         <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
@@ -234,7 +301,7 @@
                 </Border>
 
                 <!-- フッタ (Compact 非表示) -->
-                <Grid Grid.Row="6" Margin="0,12,0,0"
+                <Grid Grid.Row="7" Margin="0,12,0,0"
                       Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

@@ -13,25 +13,18 @@ public class SessionRecord
     public string ProcessName { get; set; } = "";
     /// <summary>"auto" または "manual"</summary>
     public string Source { get; set; } = "auto";
+    /// <summary>セッションに紐づく自由記述メモ。</summary>
+    public string Memo { get; set; } = "";
 
     public TimeSpan Duration => EndTime - StartTime;
 
     public string DurationSecondsString => ((long)Duration.TotalSeconds).ToString();
 
     /// <summary>CSV のヘッダ行。</summary>
-    public const string CsvHeader = "Date,StartTime,EndTime,DurationSec,ProjectKey,ProcessName,Source";
+    public const string CsvHeader = "Date,StartTime,EndTime,DurationSec,ProjectKey,ProcessName,Source,Memo";
 
     public string ToCsvRow()
     {
-        // ダブルクォートと改行を素朴にエスケープ
-        static string Esc(string s)
-        {
-            if (string.IsNullOrEmpty(s)) return "";
-            if (s.Contains(',') || s.Contains('"') || s.Contains('\n'))
-                return "\"" + s.Replace("\"", "\"\"") + "\"";
-            return s;
-        }
-
         return string.Join(",",
             StartTime.ToString("yyyy-MM-dd"),
             StartTime.ToString("HH:mm:ss"),
@@ -39,7 +32,17 @@ public class SessionRecord
             DurationSecondsString,
             Esc(ProjectKey),
             Esc(ProcessName),
-            Esc(Source));
+            Esc(Source),
+            Esc(Memo));
+    }
+
+    /// <summary>CSV 用にダブルクォートと改行を素朴にエスケープする。MarkerRecord と共有する。</summary>
+    internal static string Esc(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        if (s.Contains(',') || s.Contains('"') || s.Contains('\n'))
+            return "\"" + s.Replace("\"", "\"\"") + "\"";
+        return s;
     }
 
     public static SessionRecord? TryParseCsvRow(string line)
@@ -59,7 +62,8 @@ public class SessionRecord
                 EndTime = date.Add(end),
                 ProjectKey = fields[4],
                 ProcessName = fields[5],
-                Source = fields[6]
+                Source = fields[6],
+                Memo = fields.Count >= 8 ? fields[7] : ""
             };
         }
         catch
@@ -68,7 +72,8 @@ public class SessionRecord
         }
     }
 
-    private static System.Collections.Generic.List<string> ParseCsvLine(string line)
+    /// <summary>厳密 CSV パーサ。ダブルクォート対応。MarkerRecord と共有する。</summary>
+    internal static System.Collections.Generic.List<string> ParseCsvLine(string line)
     {
         var result = new System.Collections.Generic.List<string>();
         var sb = new System.Text.StringBuilder();

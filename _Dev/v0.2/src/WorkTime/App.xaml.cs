@@ -136,8 +136,10 @@ public partial class App : Application
         if (_main.WindowState == WindowState.Minimized)
             _main.WindowState = WindowState.Normal;
         _main.Activate();
+        // 前面化の定番ハック。最後に必ずピン状態へ戻す (戻さないとピン ON が解除される)。
         _main.Topmost = true;
         _main.Topmost = false;
+        _main.Topmost = _main.ViewModel.AlwaysOnTop;
     }
 
     private void RequestExit()
