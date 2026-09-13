@@ -5,39 +5,47 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="160" d:DesignWidth="140">
-    <Border Background="{DynamicResource CardBrush}"
-            CornerRadius="14"
-            Padding="0"
+    <!-- 外側のドロップシャドウは使わない。ヘアライン境界と上端 1px の
+         ハイライトだけで段差を出す ("keyboard key" 表現) -->
+    <Border Background="{DynamicResource SurfaceBrush}"
+            CornerRadius="16"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.45" BlurRadius="14" ShadowDepth="2"/>
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+
+            <!-- 上端のインセットハイライト -->
+            <Rectangle Grid.Row="0" Grid.RowSpan="2"
+                       Height="1"
+                       VerticalAlignment="Top"
+                       Margin="8,0"
+                       Fill="{DynamicResource InsetHighlightBrush}"/>
+
             <Grid Grid.Row="0">
                 <TextBlock x:Name="ValueText"
                            Text="{Binding Value, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            Foreground="{DynamicResource TextBrush}"
-                           FontFamily="Yu Gothic UI, Segoe UI, Arial Black"
-                           FontWeight="Black"
-                           FontSize="84"
+                           FontFamily="{DynamicResource UiFont}"
+                           FontWeight="SemiBold"
+                           FontSize="78"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"/>
-                <Rectangle Height="2"
-                           Fill="#FF12131A"
+                <!-- フリップ時計の分割線 -->
+                <Rectangle Height="1"
+                           Fill="{DynamicResource BorderBrush}"
                            VerticalAlignment="Center"
-                           Margin="6,0"/>
+                           Margin="10,0"/>
             </Grid>
+
             <TextBlock Grid.Row="1"
                        Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       Foreground="{DynamicResource TextSubBrush}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        HorizontalAlignment="Center"
-                       Margin="0,2,0,10"
-                       FontSize="12"/>
+                       Margin="0,0,0,12"
+                       FontSize="11"/>
         </Grid>
     </Border>
 </UserControl>

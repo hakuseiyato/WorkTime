@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using WorkTime.Models;
 using WorkTime.Services;
@@ -30,6 +31,19 @@ public partial class SettingsWindow : Window
     /// <summary>
     /// 「参照…」ボタン: フォルダ選択ダイアログで監視フォルダのパスを設定する。
     /// </summary>
+    /// <summary>
+    /// 起動中のアプリ一覧から監視対象を選ぶ。手で入力させないことで、
+    /// 拡張子つきや綴り違いで永久に一致しない登録が生まれるのを防ぐ。
+    /// </summary>
+    private void OnPickRunningApps(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        var dlg = new AppPickerDialog(vm.Processes) { Owner = this };
+        if (dlg.ShowDialog() != true || dlg.Result == null) return;
+        // Processes は ObservableCollection なので、追加・削除はそのまま一覧に反映される
+        vm.MergePickedApps(dlg.Result.Select(a => (a.ProcessName, a.DisplayName, a.IsSelected)));
+    }
+
     private void OnBrowseFolder(object sender, RoutedEventArgs e)
     {
         if (sender is not System.Windows.Controls.Button btn) return;

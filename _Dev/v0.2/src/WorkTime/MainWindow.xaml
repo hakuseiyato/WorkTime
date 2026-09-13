@@ -45,7 +45,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
                     <Border Width="18" Height="18"
                             Background="{StaticResource CardBrush}"
-                            CornerRadius="3">
+                            CornerRadius="6">
                         <Grid>
                             <Rectangle Width="3" Height="11"
                                        Fill="{StaticResource AccentBrush}"
@@ -118,7 +118,7 @@
                 </StackPanel>
 
                 <!-- ステータス行 (Compact 非表示) -->
-                <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
+                <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="16"
                         Padding="14,10" Margin="0,0,0,16"
                         Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <Grid>
@@ -131,7 +131,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    Text="{Binding StatusText}"
-                                   FontWeight="Bold">
+                                   FontWeight="SemiBold">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="{StaticResource TextSubBrush}"/>
@@ -153,8 +153,20 @@
                                    VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="2"
                                    Text="{Binding RecordingStatusText}"
-                                   Foreground="{StaticResource TextSubBrush}"
-                                   VerticalAlignment="Center" Margin="8,0,8,0"/>
+                                   VerticalAlignment="Center" Margin="8,0,8,0">
+                            <TextBlock.Style>
+                                <!-- 録画中だけコーラル。録画の赤丸は普遍的な記号で、
+                                     ここを無彩色にすると状態が一目で分からなくなる -->
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <!-- 開始打刻 (計測中のみ表示。クリックで開始時刻を修正) -->
                         <Button Grid.Column="3"
                                 Content="{Binding SessionStartText}"
@@ -179,7 +191,7 @@
                 </Border>
 
                 <!-- メモ行 (Compact 非表示) -->
-                <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="10"
+                <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="16"
                         Padding="14,10" Margin="0,0,0,16"
                         Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <Grid>
@@ -262,12 +274,12 @@
                 <!-- 進捗 (Compact 非表示) -->
                 <StackPanel Grid.Row="5" Margin="0,0,0,14"
                             Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
-                    <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextSubBrush}" Margin="0,0,0,6"/>
+                    <TextBlock Text="{Binding ProgressLabel}" Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="0,0,0,8"/>
                     <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"/>
                 </StackPanel>
 
                 <!-- プロジェクト別リスト (Compact 非表示) -->
-                <Border Grid.Row="6" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="2"
+                <Border Grid.Row="6" Background="{StaticResource SurfaceBrush}" CornerRadius="16" Padding="2"
                         Visibility="{Binding CompactMode, Converter={StaticResource BoolToCollapsed}}">
                     <Grid>
                         <ListView ItemsSource="{Binding ProjectSummaries}" BorderThickness="0" Background="Transparent">
@@ -322,8 +334,8 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                Text="WorkTime — log: data/logs/YYYY-MM.csv"
-                               Foreground="{StaticResource TextSubBrush}"
-                               FontSize="11" VerticalAlignment="Center"/>
+                               Style="{StaticResource MetaText}"
+                               VerticalAlignment="Center"/>
                     <Button Grid.Column="1" Content="集計エクスポート" Style="{StaticResource GhostButton}" Click="OnOpenExport" Margin="0,0,6,0"/>
                     <Button Grid.Column="2" Content="今月CSVを開く" Style="{StaticResource GhostButton}" Click="OnOpenCsv"/>
                 </Grid>
