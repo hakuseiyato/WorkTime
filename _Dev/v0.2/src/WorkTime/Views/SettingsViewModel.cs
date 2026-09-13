@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using WorkTime.Models;
+using WorkTime.Services;
 using WorkTime.ViewModels;
 
 namespace WorkTime.Views;
@@ -57,6 +61,39 @@ public class SettingsViewModel : ObservableObject
         {
             if (p is TrackedFolder t) Folders.Remove(t);
         });
+    }
+
+    /// <summary>
+    /// 「起動中のアプリから選択」の結果を Processes に反映する。
+    /// 紐づけ先はアプリ本体 (拡張子なしのプロセス名) であって、開いているファイルではない。
+    /// 既に登録済みのものは表示名を上書きしない (ユーザーが付けた名前を壊さないため)。
+    /// </summary>
+    public void MergePickedApps(IEnumerable<(string ProcessName, string DisplayName, bool IsSelected)> picked)
+    {
+        foreach (var app in picked)
+        {
+            var key = ProcessMonitor.NormalizeProcessName(app.ProcessName);
+            if (string.IsNullOrEmpty(key)) continue;
+
+            var existing = Processes.FirstOrDefault(
+                p => string.Equals(ProcessMonitor.NormalizeProcessName(p.ProcessName), key,
+                                   StringComparison.OrdinalIgnoreCase));
+
+            if (app.IsSelected)
+            {
+                if (existing != null) continue; // 既存の表示名は触らない
+                Processes.Add(new TrackedProcess
+                {
+                    ProcessName = key,
+                    DisplayName = string.IsNullOrWhiteSpace(app.DisplayName) ? key : app.DisplayName,
+                    Enabled = true
+                });
+            }
+            else if (existing != null)
+            {
+                Processes.Remove(existing);
+            }
+        }
     }
 
     /// <summary>
