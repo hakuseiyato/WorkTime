@@ -42,10 +42,26 @@ public class ProcessMonitor
         foreach (var t in Targets)
         {
             if (!t.Enabled) continue;
-            if (string.IsNullOrWhiteSpace(t.ProcessName)) continue;
-            if (running.Contains(t.ProcessName))
+            var name = NormalizeProcessName(t.ProcessName);
+            if (string.IsNullOrEmpty(name)) continue;
+            if (running.Contains(name))
                 return t;
         }
         return null;
+    }
+
+    /// <summary>
+    /// 設定に書かれたプロセス名を比較用に正規化する (前後の空白と末尾の .exe を落とす)。
+    /// .NET の Process.ProcessName は拡張子を含まないが、タスクマネージャーの表示は
+    /// "Code.exe" なので、そこからコピーした設定が永久に一致せず
+    /// 「対象アプリを登録したのに監視下に入らない」状態になる (Issue #1)。
+    /// OpenFileMonitor の対象アプリ判定とも共有する。
+    /// </summary>
+    internal static string NormalizeProcessName(string? name)
+    {
+        var s = (name ?? "").Trim();
+        if (s.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            s = s.Substring(0, s.Length - 4);
+        return s;
     }
 }

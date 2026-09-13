@@ -58,7 +58,8 @@ public class OpenFileMonitor
 
         var knownNames = KnownApps
             .Where(a => a.Enabled && !string.IsNullOrWhiteSpace(a.ProcessName))
-            .Select(a => a.ProcessName)
+            .Select(a => ProcessMonitor.NormalizeProcessName(a.ProcessName))
+            .Where(n => !string.IsNullOrEmpty(n))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // フルパス一致は誰のウィンドウでも信用してよい。
