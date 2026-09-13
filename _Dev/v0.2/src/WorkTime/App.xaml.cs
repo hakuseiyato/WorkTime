@@ -199,17 +199,23 @@ public partial class App : Application
             // フォールバックへ
         }
 
+        // 埋め込み ICO を読めなかったときの代替。本来のアイコンと同じ図形を描く
+        // (コーラルの文字盤を地の色の針で抜く)。build-icon.ps1 と揃えること。
         const int size = 32;
         using var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(bmp))
         {
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using var bg = new SolidBrush(Color.FromArgb(255, 26, 27, 31));
+            var ink = Color.FromArgb(255, 0x07, 0x08, 0x0A);
+            using var bg = new SolidBrush(ink);
             g.FillRectangle(bg, 0, 0, size, size);
-            using var bar = new SolidBrush(Color.FromArgb(255, 91, 184, 209));
-            g.FillRectangle(bar, 11, 6, 5, 20);
-            using var dot = new SolidBrush(Color.White);
-            g.FillRectangle(dot, 21, 8, 4, 4);
+            using var face = new SolidBrush(Color.FromArgb(255, 0xFF, 0x63, 0x63));
+            float d = size * 0.56f, o = (size - d) / 2f;
+            g.FillEllipse(face, o, o, d, d);
+            using var hand = new Pen(ink, size * 0.075f);
+            float c = size / 2f;
+            g.DrawLine(hand, c, c, c, c - d * 0.34f);
+            g.DrawLine(hand, c, c, c + d * 0.26f, c);
         }
         IntPtr hIcon = bmp.GetHicon();
         var icon = (Icon)Icon.FromHandle(hIcon).Clone();
