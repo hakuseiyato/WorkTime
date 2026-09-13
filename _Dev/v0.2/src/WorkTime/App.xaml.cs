@@ -49,6 +49,12 @@ public partial class App : Application
         };
 
         _main = new MainWindow();
+        using (var process = System.Diagnostics.Process.GetCurrentProcess())
+        {
+            var exe = process.MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exe))
+                Services.StartupRegistrar.RepairIfNeeded(_main.ViewModel.Config.LaunchAtStartup, exe);
+        }
         InitTray();
         InitTooltipTimer();
         SingleInstanceSignal.StartListening(ShowMain);
@@ -157,6 +163,7 @@ public partial class App : Application
 
     private void OnExit(object sender, ExitEventArgs e)
     {
+        _main?.ViewModel.Shutdown();
         SingleInstanceSignal.StopListening();
         if (Tray != null)
         {

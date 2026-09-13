@@ -127,6 +127,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    Text="{Binding StatusText}"
@@ -150,8 +151,12 @@
                                    Foreground="{StaticResource TextSubBrush}"
                                    Margin="14,0,0,0"
                                    VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding RecordingStatusText}"
+                                   Foreground="{StaticResource TextSubBrush}"
+                                   VerticalAlignment="Center" Margin="8,0,8,0"/>
                         <!-- 開始打刻 (計測中のみ表示。クリックで開始時刻を修正) -->
-                        <Button Grid.Column="2"
+                        <Button Grid.Column="3"
                                 Content="{Binding SessionStartText}"
                                 ToolTip="開始時刻を修正"
                                 Click="OnEditStartTime"
@@ -166,7 +171,7 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                        <Button Grid.Column="3"
+                        <Button Grid.Column="4"
                                 Content="{Binding ToggleButtonLabel}"
                                 Command="{Binding ToggleCommand}"
                                 Style="{StaticResource PrimaryButton}"/>
@@ -180,6 +185,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Grid Grid.Column="0" Margin="0,0,10,0">
@@ -211,6 +217,12 @@
                                 Content="⚑ 打刻"
                                 ToolTip="現在時刻にマーカーを残す (作業時間には影響しません)"
                                 Command="{Binding MarkCommand}"
+                                Style="{StaticResource GhostButton}"/>
+                        <Button Grid.Column="2"
+                                Content="⏺ 画面録画"
+                                ToolTip="プライマリモニタをタイムラプス録画（もう一度押すと停止）"
+                                Command="{Binding ToggleScreenRecordCommand}"
+                                Margin="8,0,0,0"
                                 Style="{StaticResource GhostButton}"/>
                     </Grid>
                 </Border>
