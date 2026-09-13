@@ -1,7 +1,10 @@
 # WorkTime app icon generator
 # Produces src/WorkTime/Resources/WorkTime.ico (multi-size: 16/32/48/64/128/256)
 #
-# Design: dark rounded square + cyan vertical bar + white pip (flip-clock motif).
+# Design: dark rounded plate + coral filled circle + hands knocked out in the
+# plate colour. Reads as a recording dot at 16px and as a clock at 32px+,
+# which matches what WorkTime does (計測と録画).
+# Palette follows DESIGN.md: Ink #07080a / Border #363739 / Coral #ff6363.
 # Run once after icon design changes.
 
 param(
@@ -18,55 +21,46 @@ function New-IconBitmap([int]$size) {
     $g.InterpolationMode  = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $g.PixelOffsetMode    = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
-    # rounded background
-    $bgColor = [System.Drawing.Color]::FromArgb(255, 26, 27, 31)
-    $bg = New-Object System.Drawing.SolidBrush($bgColor)
-    $r = [int]([Math]::Max(2, $size * 0.18))
+    $ink    = [System.Drawing.Color]::FromArgb(255, 0x07, 0x08, 0x0A)
+    $border = [System.Drawing.Color]::FromArgb(255, 0x36, 0x37, 0x39)
+    $coral  = [System.Drawing.Color]::FromArgb(255, 0xFF, 0x63, 0x63)
+
+    # 角丸のプレート
+    $r = [float]([Math]::Max(2.0, $size * 0.22))
     $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $path.AddArc(0, 0, $r * 2, $r * 2, 180, 90) | Out-Null
-    $path.AddArc($size - $r * 2, 0, $r * 2, $r * 2, 270, 90) | Out-Null
-    $path.AddArc($size - $r * 2, $size - $r * 2, $r * 2, $r * 2, 0, 90) | Out-Null
-    $path.AddArc(0, $size - $r * 2, $r * 2, $r * 2, 90, 90) | Out-Null
+    $path.AddArc(0, 0, $r * 2, $r * 2, 180, 90)
+    $path.AddArc($size - $r * 2, 0, $r * 2, $r * 2, 270, 90)
+    $path.AddArc($size - $r * 2, $size - $r * 2, $r * 2, $r * 2, 0, 90)
+    $path.AddArc(0, $size - $r * 2, $r * 2, $r * 2, 90, 90)
     $path.CloseFigure()
+    $bg = New-Object System.Drawing.SolidBrush($ink)
     $g.FillPath($bg, $path)
 
-    # subtle inner border
+    # ヘアラインの境界 (小さいサイズでは潰れるので出さない)
     if ($size -ge 32) {
-        $bd = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(60, 91, 184, 209), 1)
-        $g.DrawPath($bd, $path)
-        $bd.Dispose()
+        $pen = New-Object System.Drawing.Pen($border, [float][Math]::Max(1.0, $size / 64.0))
+        $g.DrawPath($pen, $path)
+        $pen.Dispose()
     }
 
-    # mid divider line (flip-clock)
-    if ($size -ge 24) {
-        $divHeight = [Math]::Max(1, [int]($size * 0.025))
-        $divBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(180, 0, 0, 0))
-        $g.FillRectangle($divBrush, [int]($size * 0.18), [int]($size / 2 - $divHeight / 2), [int]($size * 0.64), $divHeight)
-        $divBrush.Dispose()
-    }
+    # コーラルの文字盤
+    $d = [float]($size * 0.56)
+    $o = [float](($size - $d) / 2.0)
+    $face = New-Object System.Drawing.SolidBrush($coral)
+    $g.FillEllipse($face, $o, $o, $d, $d)
 
-    # cyan vertical bar
-    $cyan = [System.Drawing.Color]::FromArgb(255, 91, 184, 209)
-    $bar = New-Object System.Drawing.SolidBrush($cyan)
-    $bw = [Math]::Max(2, [int]($size * 0.14))
-    $bh = [int]($size * 0.62)
-    $bx = [int]($size * 0.30)
-    $by = [int]($size * 0.19)
-    $g.FillRectangle($bar, $bx, $by, $bw, $bh)
+    # 針はプレート色で切り抜く (別色を足さず、面の抜きだけで表現する)
+    $hand = New-Object System.Drawing.Pen($ink, [float][Math]::Max(1.5, $size * 0.075))
+    $hand.StartCap = [System.Drawing.Drawing2D.LineCap]::Flat
+    $hand.EndCap   = [System.Drawing.Drawing2D.LineCap]::Flat
+    $cx = [float]($size / 2.0)
+    $g.DrawLine($hand, $cx, $cx, $cx, [float]($cx - $d * 0.34))
+    $g.DrawLine($hand, $cx, $cx, [float]($cx + $d * 0.26), $cx)
 
-    # white pip (top-right of clock face)
-    if ($size -ge 24) {
-        $pip = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 235, 240, 245))
-        $pw = [Math]::Max(2, [int]($size * 0.16))
-        $ph = [Math]::Max(2, [int]($size * 0.09))
-        $px = [int]($size * 0.55)
-        $py = [int]($size * 0.27)
-        $g.FillRectangle($pip, $px, $py, $pw, $ph)
-        $pip.Dispose()
-    }
-
+    $hand.Dispose()
+    $face.Dispose()
     $bg.Dispose()
-    $bar.Dispose()
+    $path.Dispose()
     $g.Dispose()
     return $bmp
 }

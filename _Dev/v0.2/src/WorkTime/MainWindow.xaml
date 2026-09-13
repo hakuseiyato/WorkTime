@@ -43,17 +43,22 @@
 
                 <!-- 左: アイコン + タイトル -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <!-- アプリアイコンと同じマーク: コーラルの文字盤 + 地の色で抜いた針 -->
                     <Border Width="18" Height="18"
-                            Background="{StaticResource CardBrush}"
-                            CornerRadius="6">
-                        <Grid>
-                            <Rectangle Width="3" Height="11"
-                                       Fill="{StaticResource AccentBrush}"
-                                       HorizontalAlignment="Left" VerticalAlignment="Center"
-                                       Margin="5,0,0,0" RadiusX="1" RadiusY="1"/>
-                            <Rectangle Width="4" Height="3" Fill="White"
-                                       HorizontalAlignment="Right" VerticalAlignment="Top"
-                                       Margin="0,3,3,0"/>
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="5">
+                        <Grid Width="10" Height="10">
+                            <Ellipse Fill="{StaticResource AccentBrush}"/>
+                            <Rectangle Width="1.6" Height="3.4"
+                                       Fill="{StaticResource SurfaceBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Top"
+                                       Margin="0,1.6,0,0"/>
+                            <Rectangle Width="2.6" Height="1.6"
+                                       Fill="{StaticResource SurfaceBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="2.6,0,0,0"/>
                         </Grid>
                     </Border>
                     <TextBlock Text="WorkTime"
