@@ -26,6 +26,8 @@ public class TimeTracker
     public string CurrentProjectKey => _projectKey;
     public string CurrentProcessName => _processName;
     public string CurrentSource => _source;
+    /// <summary>現在セッションのメモ。計測中いつでも書き換えられる。</summary>
+    public string CurrentMemo { get; set; } = "";
 
     public event Action? SessionChanged;
 
@@ -49,6 +51,8 @@ public class TimeTracker
         _projectKey = projectKey;
         _processName = processName;
         _source = source;
+        // CurrentMemo はここで触らない。開始前に書いたメモをそのままセッションに載せる。
+        // 別プロジェクトへの切り替え時は上の Stop() がクリア済み。
         SessionChanged?.Invoke();
     }
 
@@ -64,9 +68,11 @@ public class TimeTracker
             EndTime = DateTime.Now,
             ProjectKey = _projectKey,
             ProcessName = _processName,
-            Source = _source
+            Source = _source,
+            Memo = CurrentMemo
         };
         _logger.Append(rec);
+        CurrentMemo = "";
         _sessionStart = null;
         _projectKey = "";
         _processName = "";
@@ -90,9 +96,11 @@ public class TimeTracker
             EndTime = endOfDay,
             ProjectKey = _projectKey,
             ProcessName = _processName,
-            Source = _source
+            Source = _source,
+            Memo = CurrentMemo
         };
         _logger.Append(rec);
+        // メモは翌日セッションへ引き継ぐためリセットしない
         _sessionStart = now.Date; // 翌日の 00:00 から
     }
 
@@ -103,5 +111,16 @@ public class TimeTracker
     {
         if (!IsRunning) return TimeSpan.Zero;
         return DateTime.Now - _sessionStart!.Value;
+    }
+
+    /// <summary>開始打刻を手動修正する。未計測 / 未来時刻 / 開始日を跨ぐ値は拒否して false を返す。</summary>
+    public bool AdjustStart(DateTime newStart)
+    {
+        if (!IsRunning) return false;
+        if (newStart > DateTime.Now) return false;
+        if (newStart.Date != _sessionStart!.Value.Date) return false;
+        _sessionStart = newStart;
+        SessionChanged?.Invoke();
+        return true;
     }
 }

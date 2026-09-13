@@ -10,6 +10,9 @@ public class AppConfig
     /// <summary>監視対象プロセス。拡張子なしのプロセス名 (例: "Unity", "blender")。</summary>
     public List<TrackedProcess> TrackedProcesses { get; set; } = new();
 
+    /// <summary>監視対象フォルダ。配下のファイルを開いていれば計測開始。既定は空 (無効)。</summary>
+    public List<TrackedFolder> TrackedFolders { get; set; } = new();
+
     /// <summary>無操作時に自動で計測停止するまでの分数。0 で無効。</summary>
     public int IdleThresholdMinutes { get; set; } = 5;
 

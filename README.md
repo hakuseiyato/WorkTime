@@ -42,6 +42,10 @@ WorkTime/
 - 目標時間に対する進捗バー
 - プロジェクト別 (= 監視対象別) 累計表示
 - タスクトレイ常駐、× ボタンでトレイ最小化、ツールチップに現在時間ライブ表示
+- 監視フォルダ: 指定フォルダ配下のファイルを開いていると自動で計測開始
+- セッションごとのメモ入力 (CSV の `Memo` 列に記録)
+- 「⚑ 打刻」ボタンでの打刻マーカー記録 (`data/logs/markers-YYYY-MM.csv`、作業時間の集計には影響しない)
+- 計測中の開始時刻をクリックで手動修正
 - 月ごとの CSV ログ (`data/logs/YYYY-MM.csv`)
 - OS 起動時の自動起動 (HKCU\Run)
 
@@ -50,10 +54,14 @@ WorkTime/
 メインウィンドウ右上「設定」から:
 
 - 監視対象プロセス: プロセス名 (拡張子なし)、表示名、有効フラグを編集
+- 監視フォルダ: フォルダパス、表示名、有効フラグを編集 (「参照…」ボタンでフォルダ選択)
 - アイドル閾値 (分): 0 で無効
 - 今日 / 今週 / 今月 の目標時間
 - 閉じたらトレイへ最小化
 - OS 起動時に自動起動
+
+監視フォルダは、その配下のファイルを開いていると自動で計測を開始する仕組み。
+プロセス名では区別できない案件別の計測に使う。フォルダ一致はプロセス一致より優先される。
 
 設定は `data/config.json`、ログは `data/logs/YYYY-MM.csv` に保存される。
 どちらも `WorkTime.exe` と同じフォルダ直下に作成される。
@@ -63,12 +71,25 @@ WorkTime/
 `data/logs/YYYY-MM.csv`、UTF-8 ヘッダ付き:
 
 ```
-Date,StartTime,EndTime,DurationSec,ProjectKey,ProcessName,Source
-2026-05-10,09:30:12,11:42:53,7961,Unity,Unity,auto
-2026-05-10,13:15:00,14:00:00,2700,Manual,Manual,manual
+Date,StartTime,EndTime,DurationSec,ProjectKey,ProcessName,Source,Memo
+2026-05-10,09:30:12,11:42:53,7961,Unity,Unity,auto,シーン調整
+2026-05-10,13:15:00,14:00:00,2700,Manual,Manual,manual,
+2026-05-10,15:10:00,16:05:30,3330,Docs,notepad,auto,"README更新, 動作確認"
 ```
 
 `Source` は `auto` (プロセス検知) または `manual` (手動トグル)。
+
+v0.3 以前の 7 列ログ (`Memo` なし) もそのまま読み込める (後方互換)。
+
+打刻マーカーは `data/logs/markers-YYYY-MM.csv` に UTF-8 ヘッダ付きで記録される:
+
+```
+Date,Time,ProjectKey,Memo
+2026-05-10,10:15:30,Unity,レビュー開始
+2026-05-10,12:05:00,(未計測),離席
+```
+
+打刻マーカーは作業時間の集計には一切影響しない。
 
 ## exe を作り直す (開発者向け)
 
@@ -89,11 +110,11 @@ Date,StartTime,EndTime,DurationSec,ProjectKey,ProcessName,Source
 _Dev/v0.2/
 ├─ WorkTime.sln
 └─ src/WorkTime/                .NET 8 WPF プロジェクト本体
-   ├─ Models/                   AppConfig / SessionRecord / ProjectSummary
-   ├─ Services/                 ProcessMonitor / IdleDetector / TimeTracker / CsvLogger /
-   │                            ConfigStore / StartupRegistrar / SingleInstanceSignal
+   ├─ Models/                   AppConfig / SessionRecord / MarkerRecord / TrackedFolder / ProjectSummary
+   ├─ Services/                 ProcessMonitor / OpenFileMonitor / IdleDetector / TimeTracker / CsvLogger /
+   │                            ConfigStore / StartupRegistrar / SingleInstanceSignal / DarkTitleBar
    ├─ ViewModels/               MainViewModel / RelayCommand / ObservableObject
-   ├─ Views/                    SettingsWindow & VM
+   ├─ Views/                    SettingsWindow / ExportDialog / TimeEditDialog & VM
    ├─ Controls/                 FlipCard
    ├─ Resources/Theme.xaml      ダークテーマ (ArtNet Manager 風シアン/ティール)
    ├─ App.xaml(.cs)             エントリ + タスクトレイ + 二重起動防止
@@ -102,8 +123,13 @@ _Dev/v0.2/
 
 ## 既知の制限
 
-- プロセス名一致なので、同名プロセスは区別されない (例: `Unity` プロジェクト別追跡は不可)
+- プロセス名一致だけでは同名プロセスを区別できない (例: Unity のプロジェクト別追跡)。案件別に分けたい場合は監視フォルダを使う
 - 日付をまたいだセッションは 23:59:59 で一度フラッシュし、翌日 00:00 から再開する (集計を綺麗に保つため)
+- 監視フォルダの検知はプロセスのコマンドラインとウィンドウタイトルに依存する。アプリ内の File > Open で開いたファイルは、ウィンドウタイトルにパスやフォルダ名が出ないアプリでは検知できない
+- 監視フォルダの検知には WMI を使うため、負荷対策として 10 秒間キャッシュされる (最大 10 秒程度の検知遅延がある)
+- ウィンドウタイトルの「フォルダ名だけ」での一致は、監視対象プロセスに登録したアプリのウィンドウに限定している。
+  エクスプローラやターミナルでフォルダを開いているだけでは計測は始まらない (フルパスがコマンドラインやタイトルに出ている場合はどのアプリでも検知する)
+- フォルダ名が 2 文字以下の場合は誤検知回避のため、フォルダ名だけの一致判定は行わない
 
 ## 配布と引継ぎ
 
@@ -141,6 +167,7 @@ WorkTime を起動中の場合は一度終了してから入れ替えてくだ�
 
 ## バージョン
 
+- v0.4: セッションメモ + 打刻マーカー + 監視フォルダ自動検知 + 開始時刻の手動修正
 - v0.3: カスタムタイトルバー + コンパクト + 最前面固定 + 集計エクスポート
 - v0.2: 単一 exe 配布対応 / 二重起動防止 / トレイツールチップ / シアンテーマ
 - v0.1: 初版 (内部のみ)
