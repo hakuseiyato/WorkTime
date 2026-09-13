@@ -66,6 +66,57 @@ WorkTime/
 設定は `data/config.json`、ログは `data/logs/YYYY-MM.csv` に保存される。
 どちらも `WorkTime.exe` と同じフォルダ直下に作成される。
 
+## タイムラプス録画
+
+v0.5 から、計測セッションに連動したタイムラプス録画に対応。
+録画は **既定 OFF**。設定の「録画を有効にする」を ON にすると、セッションの開始・停止やプロジェクト切り替えに合わせて録画する。
+「⏺ 画面録画」ボタンでは、設定の ON/OFF にかかわらずプライマリモニタを手動録画できる。もう一度押すと停止する。
+手動録画はセッションの終了やアイドル判定では止まらない。
+
+セッション連動録画はアイドル中に一時停止し、復帰後は新しいファイルとして再開する。
+停止した録画から、既定で約 75 秒を目安に早回しクリップをバックグラウンド生成する。
+倍率は整数で最低 1 倍のため、元の長さによって完成クリップの秒数は変わる。アプリ終了時は録画を停止し、クリップは生成しない。
+
+録画には **ffmpeg / ffprobe** が必要。導入コマンド:
+
+```powershell
+winget install Gyan.FFmpeg
+```
+
+PATH に追加した後で WorkTime を起動するか、設定の `FfmpegPath` に実行ファイルまたは格納フォルダを指定する。
+ffmpeg が見つからなくても、計測・メモ・打刻は利用できる。
+
+### 出力先とファイル名
+
+- 録画中: `<OutputRoot>\<yyyy-MM-dd>\<label>_<HHmmss>_recording.mkv`
+- 停止後: `<label>_<HHmmss>_<フレーム数>f.mkv`
+- クリップ: ソースと同じ日付フォルダの `clips\<元ファイル名(拡張子なし)>_x<倍率>.mp4`
+
+`label` はプロジェクトキー (手動録画は `Screen`)。ファイル名に使えない文字は `_` に置換し、空白だけなら `Session` を使う。
+同名の録画ファイルがある場合は末尾に `_2`, `_3` … を付ける。
+フレーム数の取得やリネームに失敗した場合は、録画中のファイル名のまま保存する。
+
+### 録画設定
+
+| 項目 | 既定値 | 内容 |
+| --- | --- | --- |
+| `Enabled` | `false` | セッション連動録画の有効化 |
+| `OutputRoot` | `F:\timelapse\tl_all\rec` | 録画の保存先 |
+| `Fps` | `1` | 撮影フレーム数/秒 (最低 1) |
+| `LongEdge` | `1920` | scale に渡す出力幅 (最低 2、偶数化) |
+| `Crf` | `30` | 録画品質 (0〜51、小さいほど高品質) |
+| `Encoder` | `libx264` | `libx264` / `h264_nvenc` |
+| `PauseOnIdle` | `true` | アイドル中の連動録画を一時停止 |
+| `AutoClipOnSessionEnd` | `true` | 録画停止時にクリップを自動生成 |
+| `ClipTargetSeconds` | `75` | クリップの目標秒数 (0 以下は 75) |
+| `FfmpegPath` | 空文字 | 空なら PATH の ffmpeg / ffprobe を使う |
+
+### 既知の制限
+
+- 録画範囲は **対象アプリが載っているモニタ全体** であり、ウィンドウ単位ではない。
+  ウィンドウ単位のキャプチャ (`gdigrab -i title=<ウィンドウ名>`) は GPU 描画アプリで画面が黒く抜けるため採用していない。
+- 対象モニタを取得できない場合はプライマリモニタを録画する。録画開始後のウィンドウ移動には追従しない。
+
 ## CSV フォーマット
 
 `data/logs/YYYY-MM.csv`、UTF-8 ヘッダ付き:
@@ -110,9 +161,10 @@ Date,Time,ProjectKey,Memo
 _Dev/v0.2/
 ├─ WorkTime.sln
 └─ src/WorkTime/                .NET 8 WPF プロジェクト本体
-   ├─ Models/                   AppConfig / SessionRecord / MarkerRecord / TrackedFolder / ProjectSummary
+   ├─ Models/                   AppConfig / RecordingConfig / SessionRecord / MarkerRecord / TrackedFolder / ProjectSummary
    ├─ Services/                 ProcessMonitor / OpenFileMonitor / IdleDetector / TimeTracker / CsvLogger /
-   │                            ConfigStore / StartupRegistrar / SingleInstanceSignal / DarkTitleBar
+   │                            ConfigStore / StartupRegistrar / SingleInstanceSignal / DarkTitleBar /
+   │                            CaptureRegion / ScreenRecorder / ClipMaker
    ├─ ViewModels/               MainViewModel / RelayCommand / ObservableObject
    ├─ Views/                    SettingsWindow / ExportDialog / TimeEditDialog & VM
    ├─ Controls/                 FlipCard
@@ -123,6 +175,7 @@ _Dev/v0.2/
 
 ## 既知の制限
 
+- 録画範囲は対象アプリが載っているモニタ全体であり、ウィンドウ単位ではない。ウィンドウ単位のキャプチャは GPU 描画アプリで黒く抜けるため採用していない
 - プロセス名一致だけでは同名プロセスを区別できない (例: Unity のプロジェクト別追跡)。案件別に分けたい場合は監視フォルダを使う
 - 日付をまたいだセッションは 23:59:59 で一度フラッシュし、翌日 00:00 から再開する (集計を綺麗に保つため)
 - 監視フォルダの検知はプロセスのコマンドラインとウィンドウタイトルに依存する。アプリ内の File > Open で開いたファイルは、ウィンドウタイトルにパスやフォルダ名が出ないアプリでは検知できない
@@ -167,6 +220,7 @@ WorkTime を起動中の場合は一度終了してから入れ替えてくだ�
 
 ## バージョン
 
+- v0.5: タイムラプス録画 + 手動画面録画 + 自動クリップ生成 + 自動起動登録の自己修復
 - v0.4: セッションメモ + 打刻マーカー + 監視フォルダ自動検知 + 開始時刻の手動修正
 - v0.3: カスタムタイトルバー + コンパクト + 最前面固定 + 集計エクスポート
 - v0.2: 単一 exe 配布対応 / 二重起動防止 / トレイツールチップ / シアンテーマ

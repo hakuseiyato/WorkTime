@@ -7,6 +7,9 @@ namespace WorkTime.Models;
 /// </summary>
 public class AppConfig
 {
+    /// <summary>録画機能の設定。</summary>
+    public RecordingConfig Recording { get; set; } = new();
+
     /// <summary>監視対象プロセス。拡張子なしのプロセス名 (例: "Unity", "blender")。</summary>
     public List<TrackedProcess> TrackedProcesses { get; set; } = new();
 

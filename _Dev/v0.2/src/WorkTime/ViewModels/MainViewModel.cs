@@ -15,6 +15,13 @@ public class MainViewModel : ObservableObject
 {
     private readonly DispatcherTimer _tickTimer;
     private readonly DispatcherTimer _monitorTimer;
+    private string _hitProcessName = "";
+    private string? _recordingLabel;
+    private bool _manualRecording;
+    private bool _recordingSuppressed;
+    private bool _recordingSessionRunning;
+    private string _recordingSessionKey = "";
+    private bool _shuttingDown;
 
     /// <summary>
     /// ユーザーが「停止」を押した直後の対象プロジェクトキー。
@@ -32,6 +39,12 @@ public class MainViewModel : ObservableObject
     public OpenFileMonitor FolderMonitor { get; }
     public TimeTracker Tracker { get; }
     public CsvLogger Logger { get; }
+    public ScreenRecorder Recorder { get; }
+
+    public bool IsRecording => Recorder.IsRecording;
+    public string RecordingStatusText => _manualRecording && IsRecording
+        ? "● 録画中"
+        : !Config.Recording.Enabled ? "録画 OFF" : IsRecording ? "● 録画中" : "○ 録画停止";
 
     // ===== 表示用プロパティ =====
 
@@ -190,6 +203,7 @@ public class MainViewModel : ObservableObject
     public RelayCommand ToggleCommand { get; }
     public RelayCommand SetScopeCommand { get; }
     public RelayCommand MarkCommand { get; }
+    public RelayCommand ToggleScreenRecordCommand { get; }
 
     public MainViewModel()
     {
@@ -201,8 +215,16 @@ public class MainViewModel : ObservableObject
 
         Logger = new CsvLogger();
         Tracker = new TimeTracker(Logger);
+        Recorder = new ScreenRecorder();
+        var dispatcher = Dispatcher.CurrentDispatcher;
+        Recorder.StateChanged += () =>
+        {
+            if (dispatcher.CheckAccess()) NotifyRecordingState();
+            else dispatcher.BeginInvoke(new Action(NotifyRecordingState));
+        };
         Tracker.SessionChanged += () =>
         {
+            UpdateSessionRecording();
             IsRunning = Tracker.IsRunning;
             OnPropertyChanged(nameof(Memo));           // Stop でクリアされた分を UI に反映
             OnPropertyChanged(nameof(SessionStartText));
@@ -219,6 +241,7 @@ public class MainViewModel : ObservableObject
         ToggleCommand = new RelayCommand(OnToggle);
         SetScopeCommand = new RelayCommand(p => { if (p is string s) Scope = s; });
         MarkCommand = new RelayCommand(OnMark);
+        ToggleScreenRecordCommand = new RelayCommand(OnToggleScreenRecord);
 
         _tickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _tickTimer.Tick += (_, _) => OnTick();
@@ -243,6 +266,8 @@ public class MainViewModel : ObservableObject
         FolderMonitor.Targets = Config.TrackedFolders;
         FolderMonitor.KnownApps = Config.TrackedProcesses;
         AutoDetectEnabled = Config.AutoDetectEnabled;
+        UpdateSessionRecording();
+        NotifyRecordingState();
         Refresh();
     }
 
@@ -291,17 +316,132 @@ public class MainViewModel : ObservableObject
         StatusDetail = $"⚑ {now:HH:mm:ss} 打刻";
     }
 
+    // ===== 録画 =====
+
+    private void NotifyRecordingState()
+    {
+        OnPropertyChanged(nameof(IsRecording));
+        OnPropertyChanged(nameof(RecordingStatusText));
+    }
+
+    private void OnToggleScreenRecord(object? _)
+    {
+        if (_shuttingDown) return;
+        CollectExitedRecording();
+        if (Recorder.IsRecording)
+        {
+            // ボタンで止めた録画は、同じセッション内では自動再開しない。
+            _recordingSuppressed = Tracker.IsRunning;
+            StopRecording(makeClip: true);
+        }
+        else
+        {
+            _manualRecording = true;
+            if (!Recorder.Start(Config.Recording, CaptureRegion.PrimaryMonitor(), "Screen"))
+                _manualRecording = false;
+        }
+        NotifyRecordingState();
+    }
+
+    private void UpdateSessionRecording()
+    {
+        if (_shuttingDown) return;
+        CollectExitedRecording();
+        bool sessionChanged = _recordingSessionRunning != Tracker.IsRunning ||
+            _recordingSessionKey != Tracker.CurrentProjectKey;
+        _recordingSessionRunning = Tracker.IsRunning;
+        _recordingSessionKey = Tracker.CurrentProjectKey;
+        if (sessionChanged) _recordingSuppressed = false;
+        if (_manualRecording) return;
+
+        var cfg = Config.Recording;
+        bool isIdle = cfg.PauseOnIdle && Config.IdleThresholdMinutes > 0 &&
+            IdleDetector.GetIdleTime() >= TimeSpan.FromMinutes(Config.IdleThresholdMinutes);
+        if (!cfg.Enabled || !Tracker.IsRunning || isIdle || _recordingSuppressed)
+        {
+            if (Recorder.IsRecording) StopRecording(makeClip: true);
+            return;
+        }
+
+        if (Recorder.IsRecording && _recordingLabel != Tracker.CurrentProjectKey)
+            StopRecording(makeClip: true);
+        if (!Recorder.IsRecording)
+        {
+            if (Recorder.Start(cfg, GetRecordingRect(), Tracker.CurrentProjectKey))
+                _recordingLabel = Tracker.CurrentProjectKey;
+        }
+    }
+
+    private CaptureRect GetRecordingRect()
+    {
+        System.Diagnostics.Process[] processes = Array.Empty<System.Diagnostics.Process>();
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_hitProcessName))
+            {
+                processes = System.Diagnostics.Process.GetProcessesByName(_hitProcessName);
+                var process = processes.FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
+                if (process != null && CaptureRegion.ForProcess(process) is CaptureRect rect)
+                    return rect;
+            }
+        }
+        catch
+        {
+            // 対象プロセスが終了した場合などはプライマリモニタを使う。
+        }
+        finally
+        {
+            foreach (var process in processes)
+            {
+                try { process.Dispose(); }
+                catch { }
+            }
+        }
+        return CaptureRegion.PrimaryMonitor();
+    }
+
+    private void CollectExitedRecording()
+    {
+        // ffmpeg が不意に終了しても、残ったセグメントを回収して状態を解除する。
+        if (!_shuttingDown && !Recorder.IsRecording && (_manualRecording || _recordingLabel != null))
+            StopRecording(makeClip: true);
+    }
+
+    private void StopRecording(bool makeClip)
+    {
+        var cfg = Config.Recording;
+        var path = Recorder.Stop(cfg);
+        _manualRecording = false;
+        _recordingLabel = null;
+        NotifyRecordingState();
+        if (!makeClip || !cfg.AutoClipOnSessionEnd || path == null) return;
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            try { ClipMaker.Make(cfg, path); }
+            catch { }
+        });
+    }
+
     // ===== タイマー Tick =====
 
     private void OnTick()
     {
+        CollectExitedRecording();
         Tracker.HandleDayRollover();
         UpdateClock();
         UpdateStatus();
         OnPropertyChanged(nameof(SessionStartText));
+        NotifyRecordingState();
     }
 
     private void OnMonitorTick()
+    {
+        if (_shuttingDown) return;
+        try { CheckMonitoredTargets(); }
+        finally { UpdateSessionRecording(); }
+    }
+
+    private void CheckMonitoredTargets()
     {
         if (!AutoDetectEnabled)
         {
@@ -332,6 +472,7 @@ public class MainViewModel : ObservableObject
                 hitProcessName = processHit.ProcessName;
             }
         }
+        _hitProcessName = hitProcessName;
         var idleMin = Math.Max(0, Config.IdleThresholdMinutes);
         var idle = IdleDetector.GetIdleTime();
         bool isIdle = idleMin > 0 && idle >= TimeSpan.FromMinutes(idleMin);
@@ -568,8 +709,12 @@ public class MainViewModel : ObservableObject
     /// </summary>
     public void Shutdown()
     {
+        if (_shuttingDown) return;
+        _shuttingDown = true;
         _tickTimer.Stop();
         _monitorTimer.Stop();
+        if (Recorder.IsRecording || _manualRecording || _recordingLabel != null)
+            StopRecording(makeClip: false);
         Tracker.Stop();
     }
 }

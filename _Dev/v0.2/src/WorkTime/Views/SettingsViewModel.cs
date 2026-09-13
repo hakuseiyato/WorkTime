@@ -5,11 +5,14 @@ using WorkTime.ViewModels;
 namespace WorkTime.Views;
 
 /// <summary>
-/// 設定ダイアログ用 ViewModel。AppConfig をそのまま編集する。
+/// 設定ダイアログ用 ViewModel。録画設定は作業用コピーで編集する。
 /// </summary>
 public class SettingsViewModel : ObservableObject
 {
     public AppConfig Config { get; }
+    /// <summary>設定画面で編集する録画設定。</summary>
+    public RecordingConfig Recording { get; }
+    public string[] Encoders { get; } = new[] { "libx264", "h264_nvenc" };
 
     public ObservableCollection<TrackedProcess> Processes { get; }
     /// <summary>設定画面で編集する監視フォルダ一覧。</summary>
@@ -23,6 +26,19 @@ public class SettingsViewModel : ObservableObject
     public SettingsViewModel(AppConfig config)
     {
         Config = config;
+        Recording = new RecordingConfig
+        {
+            Enabled = config.Recording.Enabled,
+            OutputRoot = config.Recording.OutputRoot,
+            Fps = config.Recording.Fps,
+            LongEdge = config.Recording.LongEdge,
+            Crf = config.Recording.Crf,
+            Encoder = config.Recording.Encoder,
+            PauseOnIdle = config.Recording.PauseOnIdle,
+            AutoClipOnSessionEnd = config.Recording.AutoClipOnSessionEnd,
+            ClipTargetSeconds = config.Recording.ClipTargetSeconds,
+            FfmpegPath = config.Recording.FfmpegPath
+        };
         Processes = new ObservableCollection<TrackedProcess>(config.TrackedProcesses);
         Folders = new ObservableCollection<TrackedFolder>(config.TrackedFolders);
         AddProcessCommand = new RelayCommand(_ =>
@@ -44,10 +60,20 @@ public class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// OK 押下時に Processes を Config に反映。
+    /// OK 押下時に監視対象と録画設定を Config に反映。
     /// </summary>
     public void Commit()
     {
+        Config.Recording.Enabled = Recording.Enabled;
+        Config.Recording.OutputRoot = Recording.OutputRoot;
+        Config.Recording.Fps = Recording.Fps;
+        Config.Recording.LongEdge = Recording.LongEdge;
+        Config.Recording.Crf = Recording.Crf;
+        Config.Recording.Encoder = Recording.Encoder;
+        Config.Recording.PauseOnIdle = Recording.PauseOnIdle;
+        Config.Recording.AutoClipOnSessionEnd = Recording.AutoClipOnSessionEnd;
+        Config.Recording.ClipTargetSeconds = Recording.ClipTargetSeconds;
+        Config.Recording.FfmpegPath = Recording.FfmpegPath;
         Config.TrackedProcesses.Clear();
         foreach (var p in Processes)
         {

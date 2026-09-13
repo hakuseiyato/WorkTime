@@ -49,6 +49,24 @@ public partial class SettingsWindow : Window
         lv?.Items.Refresh();
     }
 
+    /// <summary>録画の出力先フォルダを選択する。</summary>
+    private void OnBrowseRecordingRoot(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+
+        using var dlg = new WinForms.FolderBrowserDialog
+        {
+            Description = "録画の出力先フォルダを選択",
+            UseDescriptionForTitle = true,
+            SelectedPath = vm.Recording.OutputRoot
+        };
+        if (dlg.ShowDialog() != WinForms.DialogResult.OK) return;
+        vm.Recording.OutputRoot = dlg.SelectedPath;
+
+        // RecordingConfig は変更通知を持たないため、表示を明示的に更新する
+        RecordingOutputRootBox.Text = dlg.SelectedPath;
+    }
+
     private static System.Windows.Controls.ListView? FindAncestorListView(DependencyObject child)
     {
         DependencyObject? current = child;
