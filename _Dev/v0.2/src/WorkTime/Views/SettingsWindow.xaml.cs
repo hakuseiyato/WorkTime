@@ -3,6 +3,9 @@ using System.Windows;
 using WorkTime.Models;
 using WorkTime.Services;
 using WinForms = System.Windows.Forms;
+using MessageBox = System.Windows.MessageBox;
+using MessageBoxButton = System.Windows.MessageBoxButton;
+using MessageBoxImage = System.Windows.MessageBoxImage;
 
 namespace WorkTime.Views;
 
@@ -12,6 +15,31 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        Loaded += (_, _) => RefreshStartupNotice();
+    }
+
+    /// <summary>
+    /// Windows 側の無効フラグを確認し、立っていれば注意書きを出す。
+    /// 黙って書き戻さないのは、ユーザーが意図的に切った設定かもしれないため。
+    /// </summary>
+    private void RefreshStartupNotice()
+    {
+        StartupBlockedNotice.Visibility = StartupRegistrar.IsDisabledByWindows()
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void OnEnableStartupInWindows(object sender, RoutedEventArgs e)
+    {
+        if (StartupRegistrar.EnableInWindows())
+        {
+            RefreshStartupNotice();
+            return;
+        }
+        MessageBox.Show(this,
+            "Windows のスタートアップ設定を変更できませんでした。" +
+            "タスクマネージャーの「スタートアップ アプリ」から WorkTime を有効にしてください。",
+            "WorkTime", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void OnOk(object sender, RoutedEventArgs e)
