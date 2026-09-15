@@ -494,20 +494,21 @@ public class MainViewModel : ObservableObject
 
         if (hitKey != null && !isIdle)
         {
-            if (!Tracker.IsRunning || Tracker.CurrentSource == "manual")
-            {
-                // 手動中なら手動を優先 (停止しない)
-                if (Tracker.IsRunning && Tracker.CurrentSource == "manual") return;
-                Tracker.Start(hitKey, hitProcessName, "auto");
-            }
-            else if (Tracker.CurrentProjectKey != hitKey)
+            // 対象アプリを検知したら、手動セッション中でも自動計測へ切り替える。
+            // 以前は手動を優先して return していたが、それだと一度「開始」を押した後は
+            // 停止するまで全ての作業が Manual に吸収され、アプリ別の記録が残らなかった。
+            // 自動検知を止めたいときは「自動検知」チェックを外す (専用のスイッチが既にある)。
+            // Start は内部で前セッションを Stop するので、切り替えまでの時間は
+            // Manual として正しく記録される。
+            if (!Tracker.IsRunning || Tracker.CurrentProjectKey != hitKey)
             {
                 Tracker.Start(hitKey, hitProcessName, "auto");
             }
         }
         else
         {
-            // 自動セッション中なら停止。手動中は触らない。
+            // 対象が居なくなったら自動セッションは停止する。手動セッションは
+            // ユーザーが明示的に始めたものなので、ここでは触らない。
             if (Tracker.IsRunning && Tracker.CurrentSource == "auto")
                 Tracker.Stop();
         }
