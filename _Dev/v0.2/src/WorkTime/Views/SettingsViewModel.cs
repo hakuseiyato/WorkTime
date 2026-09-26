@@ -18,6 +18,20 @@ public class SettingsViewModel : ObservableObject
     public RecordingConfig Recording { get; }
     public string[] Encoders { get; } = new[] { "libx264", "h264_nvenc" };
 
+    /// <summary>録画するモニタの選択肢。設定を開いた時点の構成を出す。</summary>
+    public List<MonitorInfo> Monitors { get; } = CaptureRegion.ListMonitors();
+
+    /// <summary>
+    /// ComboBox の選択項目。保存値に対応するモニタが見つからない (構成が変わった) 場合は
+    /// 先頭の「自動」を選んだ状態で見せる。設定値そのものは Commit まで書き換えない。
+    /// </summary>
+    public MonitorInfo? SelectedMonitor
+    {
+        get => Monitors.FirstOrDefault(m => string.Equals(m.Key, Recording.Monitor, StringComparison.OrdinalIgnoreCase))
+               ?? Monitors.FirstOrDefault();
+        set { if (value != null) { Recording.Monitor = value.Key; OnPropertyChanged(); } }
+    }
+
     public ObservableCollection<TrackedProcess> Processes { get; }
     /// <summary>設定画面で編集する監視フォルダ一覧。</summary>
     public ObservableCollection<TrackedFolder> Folders { get; }
@@ -38,6 +52,7 @@ public class SettingsViewModel : ObservableObject
             LongEdge = config.Recording.LongEdge,
             Crf = config.Recording.Crf,
             Encoder = config.Recording.Encoder,
+            Monitor = config.Recording.Monitor,
             PauseOnIdle = config.Recording.PauseOnIdle,
             AutoClipOnSessionEnd = config.Recording.AutoClipOnSessionEnd,
             ClipTargetSeconds = config.Recording.ClipTargetSeconds,
@@ -107,6 +122,7 @@ public class SettingsViewModel : ObservableObject
         Config.Recording.LongEdge = Recording.LongEdge;
         Config.Recording.Crf = Recording.Crf;
         Config.Recording.Encoder = Recording.Encoder;
+        Config.Recording.Monitor = Recording.Monitor;
         Config.Recording.PauseOnIdle = Recording.PauseOnIdle;
         Config.Recording.AutoClipOnSessionEnd = Recording.AutoClipOnSessionEnd;
         Config.Recording.ClipTargetSeconds = Recording.ClipTargetSeconds;
