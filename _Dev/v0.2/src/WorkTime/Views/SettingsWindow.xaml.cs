@@ -42,6 +42,36 @@ public partial class SettingsWindow : Window
             "WorkTime", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
+    /// <summary>
+    /// 手動で更新を確認する。更新があればダイアログを出し、適用されたら
+    /// 新しい exe が起動済みなので自分のアプリを終了させる。
+    /// </summary>
+    private async void OnCheckUpdate(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateButton.IsEnabled = false;
+        var original = CheckUpdateButton.Content;
+        CheckUpdateButton.Content = "確認中…";
+        try
+        {
+            var info = await UpdateChecker.CheckAsync();
+            if (info == null)
+            {
+                MessageBox.Show(this,
+                    $"お使いのバージョン (v{UpdateChecker.CurrentVersion}) が最新です。",
+                    "WorkTime", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var dlg = new UpdateDialog(info) { Owner = this };
+            dlg.ShowDialog();
+            if (dlg.Applied) System.Windows.Application.Current.Shutdown();
+        }
+        finally
+        {
+            CheckUpdateButton.Content = original;
+            CheckUpdateButton.IsEnabled = true;
+        }
+    }
+
     private void OnOk(object sender, RoutedEventArgs e)
     {
         if (DataContext is SettingsViewModel vm)
