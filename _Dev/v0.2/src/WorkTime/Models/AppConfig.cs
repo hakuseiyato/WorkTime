@@ -7,6 +7,9 @@ namespace WorkTime.Models;
 /// </summary>
 public class AppConfig
 {
+    /// <summary>起動時に GitHub Releases を見て更新の有無を確認するか。</summary>
+    public bool CheckUpdatesOnStartup { get; set; } = true;
+
     /// <summary>録画機能の設定。</summary>
     public RecordingConfig Recording { get; set; } = new();
 

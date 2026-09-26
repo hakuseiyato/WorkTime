@@ -48,6 +48,9 @@ public partial class App : Application
             ex.Handled = true;
         };
 
+        // 前回の更新で残った旧 exe を掃除してから始める
+        Services.SelfUpdater.CleanupOldFile();
+
         _main = new MainWindow();
         using (var process = System.Diagnostics.Process.GetCurrentProcess())
         {
@@ -63,6 +66,35 @@ public partial class App : Application
             _main.Hide();
         else
             _main.Show();
+
+        if (_main.ViewModel.Config.CheckUpdatesOnStartup)
+            _ = CheckUpdatesAsync();
+    }
+
+    /// <summary>
+    /// 起動時の更新確認。通信できなければ黙って諦める。
+    /// 見つかっても自動では適用せず、ユーザーが押したときだけ置き換える。
+    /// </summary>
+    private async System.Threading.Tasks.Task CheckUpdatesAsync()
+    {
+        try
+        {
+            var info = await Services.UpdateChecker.CheckAsync();
+            if (info == null || _main == null) return;
+            var dlg = new Views.UpdateDialog(info);
+            if (_main.IsVisible) dlg.Owner = _main;
+            dlg.ShowDialog();
+            if (dlg.Applied)
+            {
+                IsExiting = true;
+                _main.ViewModel.Shutdown();
+                Shutdown();
+            }
+        }
+        catch
+        {
+            // 更新確認の失敗で通常動作を妨げない
+        }
     }
 
     private void InitTray()
