@@ -237,6 +237,18 @@
                     <TextBlock Grid.Column="2" Text="クリップ目標 (秒)" VerticalAlignment="Center" Margin="12,0,8,0"/>
                     <TextBox Grid.Column="3" Text="{Binding Recording.ClipTargetSeconds}"/>
                 </Grid>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="録画するモニタ" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Monitors}"
+                              SelectedItem="{Binding SelectedMonitor}"
+                              DisplayMemberPath="Label"
+                              ToolTip="「自動」は対象アプリが載っているモニタに追従します。モニタを指定すると常にそのモニタを録画します。"
+                              VerticalContentAlignment="Center"/>
+                </Grid>
                 <CheckBox Content="アイドル中は録画を一時停止する"
                           IsChecked="{Binding Recording.PauseOnIdle}" Margin="0,0,0,4"/>
                 <CheckBox Content="セッション終了時にクリップを自動生成する"

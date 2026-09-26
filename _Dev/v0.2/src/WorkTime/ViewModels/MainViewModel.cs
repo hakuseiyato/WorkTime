@@ -337,7 +337,7 @@ public class MainViewModel : ObservableObject
         else
         {
             _manualRecording = true;
-            if (!Recorder.Start(Config.Recording, CaptureRegion.PrimaryMonitor(), "Screen"))
+            if (!Recorder.Start(Config.Recording, CaptureRegion.Resolve(Config.Recording.Monitor, null), "Screen"))
                 _manualRecording = false;
         }
         NotifyRecordingState();
@@ -374,6 +374,8 @@ public class MainViewModel : ObservableObject
 
     private CaptureRect GetRecordingRect()
     {
+        // 対象プロセスを渡すのは設定が "auto" のときだけ意味を持つ。
+        // どのモニタを録るかの判断は CaptureRegion.Resolve に一本化してある。
         System.Diagnostics.Process[] processes = Array.Empty<System.Diagnostics.Process>();
         try
         {
@@ -381,13 +383,12 @@ public class MainViewModel : ObservableObject
             {
                 processes = System.Diagnostics.Process.GetProcessesByName(_hitProcessName);
                 var process = processes.FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
-                if (process != null && CaptureRegion.ForProcess(process) is CaptureRect rect)
-                    return rect;
+                return CaptureRegion.Resolve(Config.Recording.Monitor, process);
             }
         }
         catch
         {
-            // 対象プロセスが終了した場合などはプライマリモニタを使う。
+            // 対象プロセスが終了した場合などは下のフォールバックへ。
         }
         finally
         {
@@ -397,7 +398,7 @@ public class MainViewModel : ObservableObject
                 catch { }
             }
         }
-        return CaptureRegion.PrimaryMonitor();
+        return CaptureRegion.Resolve(Config.Recording.Monitor, null);
     }
 
     private void CollectExitedRecording()

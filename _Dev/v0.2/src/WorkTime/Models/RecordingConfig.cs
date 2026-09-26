@@ -32,4 +32,10 @@ public class RecordingConfig
 
     /// <summary>ffmpeg のファイルまたはディレクトリ。空なら PATH から検索する。</summary>
     public string FfmpegPath { get; set; } = "";
+
+    /// <summary>
+    /// 録画するモニタ。"auto" (対象アプリのモニタ) / "primary" / デバイス名 (\.\DISPLAY1 など)。
+    /// 既定は auto で、従来どおり対象アプリが載っているモニタに追従する。
+    /// </summary>
+    public string Monitor { get; set; } = "auto";
 }
